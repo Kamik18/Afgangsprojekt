@@ -2,9 +2,6 @@
 Program: utils.py
 This program helps calculate the waypoints along the racetrack
 that the robot needs to follow.
- 
-Modified from code developed by Atsushi Sakai
-Source: https://github.com/AtsushiSakai/PythonRobotics
 """
 import numpy as np
 import math

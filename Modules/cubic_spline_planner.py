@@ -3,9 +3,6 @@ Cubic spline planner
  
 Program: cubic_spine_planner.py
  
-Author: Atsushi Sakai(@Atsushi_twi)
-Source: https://github.com/AtsushiSakai/PythonRobotics
- 
 This program implements a cubic spline. For more information on 
 cubic splines, check out this link:
 https://mathworld.wolfram.com/CubicSpline.html
