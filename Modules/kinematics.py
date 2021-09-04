@@ -248,7 +248,7 @@ def dLQR(F,Q,R,x,xf,dt=0.1):
  
 def get_R():
     """
-    This function provides the R matrix to the lqr_ekf_control simulator.
+    This function provides the R matrix to the lqr_control simulator.
      
     Returns the input cost matrix R.
  
@@ -272,7 +272,7 @@ def get_R():
  
 def get_Q():
     """
-    This function provides the Q matrix to the lqr_ekf_control simulator.
+    This function provides the Q matrix to the lqr_control simulator.
      
     Returns the state cost matrix Q.
  

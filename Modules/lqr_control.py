@@ -1,6 +1,6 @@
 """
-A robot will follow a racetrack using an LQR controller and EKF (with landmarks)
-to estimate the state (i.e. x position, y position, yaw angle) at each timestep
+A robot will follow a racetrack using an LQR controller to estimate 
+the state (i.e. x position, y position, yaw angle) at each timestep
 """
 
 # Import important libraries

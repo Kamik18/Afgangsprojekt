@@ -1,8 +1,8 @@
 from Modules.utils import compute_traj
-from Modules.lqr_ekf_control import *
+from Modules.lqr_control import *
 
 if __name__ == '__main__':
-    print("LQR + EKF steering control tracking start")
+    print("LQR steering control tracking start")
  
     # Create the track waypoints
     ax = [8.3, 8.0, 7.2, 6.2, 6.5, 1.5,-2.0,-3.5, 2, 10]
@@ -18,7 +18,7 @@ if __name__ == '__main__':
         plt.close()
         flg, _ = plt.subplots(1)
         plt.plot(ax, ay, "xb", label="Inputs")
-        plt.plot(desired_traj[:,0], desired_traj[:,1], "-r", label="Spline")
+        plt.plot(desired_traj[:,0], desired_traj[:,1], "-r", label="Trajectory")
         plt.plot(trajectory[:,0], trajectory[:,1], "-g", label="Tracking")
         plt.grid(True)
         plt.axis("equal")
