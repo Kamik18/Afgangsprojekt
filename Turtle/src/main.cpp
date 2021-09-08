@@ -91,72 +91,51 @@ void setup()
   //TCCR2B=TCCR2B&0xf8|0x01;    // Pin3,Pin11 PWM 31250Hz
 
   analogWriteFrequency(31250);
+  analogWriteResolution(8);
 
   //SONAR::init(13);    // Pin13 as RW Control
 
   _2WD.PIDEnable(0.35, 0.02, 0, 10);
-  //wheel1.runPWM(50, DIR_ADVANCE);
-  //wheel2.runPWM(100, DIR_ADVANCE);
 
   Serial.begin(115200);
   Serial.println("Hello");
 }
 
-uint8_t counter = 0;
+void stop_wheels()
+{
+  wheel1.runPWM(0, DIR_ADVANCE, false);
+  wheel2.runPWM(0, DIR_ADVANCE, false);
+  delay(500);
+}
+
+const uint16_t delay_msec = 1000;
 void loop()
 {
-  _2WD.setCarAdvance();
-  delay(500);
-  _2WD.setCarBackoff();
-  delay(500);
-  _2WD.setCarRotateLeft();
-  delay(500);
-  _2WD.setCarRotateRight();
-  delay(500);
-  //_2WD.demoActions(80, 5000);
-  //_2WD.setCarUpperLeftTime(40);
-  //_2WD.setCarLowerLeftTime(40);
-  //Serial.println(counter++);
-  //delay(500);
-}
+  // ADVANCE - ADVANCE
+  Serial.println("ADVANCE - ADVANCE");
+  wheel1.runPWM(255, DIR_ADVANCE);
+  wheel2.runPWM(255, DIR_ADVANCE);
+  delay(delay_msec);
+  stop_wheels();
 
-/*
-void loop() {
-    _2WD.demoActions(80,5000);
-}
+  // ADVANCE - BACKOFF
+  Serial.println("ADVANCE - BACKOFF");
+  wheel1.runPWM(255, DIR_ADVANCE);
+  wheel2.runPWM(255, DIR_BACKOFF);
+  delay(delay_msec);
+  stop_wheels();
 
-void loop() {
-        boolean bumperL=!digitalRead(bumperL_pin);
-        boolean bumperC=!digitalRead(bumperC_pin);
-        boolean bumperR=!digitalRead(bumperR_pin);
-        
-	//int irL0=ir_distance(irL0_pin);
-	//int irC0=ir_distance(irC0_pin);
-        //int irR0=ir_distance(irR0_pin);      
-         
-        static unsigned long currMillis=0;
-        if(millis()-currMillis>SONAR::duration) {
-            currMillis=millis();
-            sonarsUpdate();   
-        }
-                 
-        if(bumperL || bumperC || bumperR) {
-          _2WD.setCarBackoff(speedMMPS);
-          _2WD.delayMS(300);
-          if(bumperL || bumperC) _2WD.setCarRotateRight(speedMMPS); // // back off and turn right
-          else _2WD.setCarRotateLeft(speedMMPS);      // back off and turn left
-          _2WD.delayMS(300);
-        //} else if(0<irL0 && irL0<30 || 0<irC0 && irC0<40 || 0<distBuf[0] && distBuf[0]<30 || 0<distBuf[1] && distBuf[1]<40) {
-        } else if(0<distBuf[0] && distBuf[0]<30 || 0<distBuf[1] && distBuf[1]<40) {  
-          _2WD.setCarRotateRight(speedMMPS); 
-        //} else if(0<irR0 && irR0<30 || 0<distBuf[2] && distBuf[2]<30) {
-        } else if(0<distBuf[2] && distBuf[2]<30) {
-          _2WD.setCarRotateLeft(speedMMPS);
-        } else { 
-          _2WD.setCarAdvance(speedMMPS);
-        }
-        _2WD.PIDRegulate();
-        if(millis()%100==0) Serial.println(_2WD.getCarStat());
-        //_2WD.demoActions();
+  // BACKOFF - ADVANCE
+  Serial.println("BACKOFF - ADVANCE");
+  wheel1.runPWM(255, DIR_BACKOFF);
+  wheel2.runPWM(255, DIR_ADVANCE);
+  delay(delay_msec);
+  stop_wheels();
+
+  // BACKOFF - BACKOFF
+  Serial.println("BACKOFF - BACKOFF");
+  wheel1.runPWM(255, DIR_BACKOFF);
+  wheel2.runPWM(255, DIR_BACKOFF);
+  delay(delay_msec);
+  stop_wheels();
 }
-*/
