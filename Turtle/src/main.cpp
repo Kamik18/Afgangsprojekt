@@ -8,7 +8,7 @@
 //#include <PID_Beta6.h>
 
 //#include <SONAR.h>
-#include "Modules/Motor_temp.hpp"
+#include "Modules/Motor.hpp"
 
 // Sensor positions
 //         - - - - - - - - - - - - - - - -
@@ -64,21 +64,23 @@ int ir_distance(unsigned char ir) {
 */
 
 // Bumper
-uint8_t bumper_left = 1;//12;
+uint8_t bumper_left = 1;
 uint8_t bumper_center = 2;
 uint8_t bumper_right = 3;
 
 motor::IRQ_struct irq_left;
 motor::IRQ_struct irq_right;
-motor::Motor_temp wheel_left(9, 8, 4, 5, &irq_left);
-motor::Motor_temp wheel_right(10, 11, 6, 7, &irq_right);
+// motor::Motor wheel_left(9, 8, /*4, 5,*/ &irq_left);
+// motor::Motor wheel_right(10, 11, /*6, 7,*/ &irq_right);
+motor::Motor wheel_left(3, 12, /*4, 5,*/ &irq_left);
+motor::Motor wheel_right(11, 13, /*6, 7,*/ &irq_right);
 
 uint8_t horn = 0;
 
 void stop_wheels()
 {
-  wheel_left.runPWM(0, motor::direction::Advance);
-  wheel_right.runPWM(0, motor::direction::Advance);
+  wheel_left.runPWM(0, motor::direction::Forward);
+  wheel_right.runPWM(0, motor::direction::Forward);
   delay(250);
 }
 
@@ -110,28 +112,28 @@ void setup()
   pinMode(horn, OUTPUT);
   digitalWrite(horn, LOW);
 
-  // Set wheel PWM
+  // Configurate wheel PWM
   analogWriteFrequency(31250);
   analogWriteResolution(8);
 
   // Initialize wheels
-  wheel_left.runPWM(0, motor::direction::Advance);
-  wheel_right.runPWM(0, motor::direction::Advance);
+  wheel_left.runPWM(0, motor::direction::Forward);
+  wheel_right.runPWM(0, motor::direction::Forward);
 }
 
-const uint16_t delay_msec = 250;
+const uint16_t delay_msec = 500;
 const uint8_t left = 0;
 const uint8_t right = 0;
 uint8_t counter = 0;
 void loop()
 {
-  //wheel_left.runPWM(left + counter, motor::direction::Advance);
-  //wheel_right.runPWM(right + counter, motor::direction::Advance);
-  //delay(delay_msec);
-  //stop_wheels();
-  //delay(delay_msec);
-  //Serial.println(counter);
-  //counter++;
+  wheel_left.runPWM(left + counter, motor::direction::Forward);
+  wheel_right.runPWM(right + counter, motor::direction::Forward);
+  delay(delay_msec);
+  stop_wheels();
+  delay(delay_msec);
+  Serial.println(counter);
+  counter++;
 
   is_bumper_pressed();
   delay(100);
