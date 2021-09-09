@@ -1,14 +1,16 @@
 #include <Arduino.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
-#include <MotorWheel.h>
-#include <R2WD.h>
+//#include <MotorWheel.h>
+//#include <R2WD.h>
 
-#include <fuzzy_table.h>
+//#include <fuzzy_table.h>
 //#include <PID_Beta6.h>
 
-#include <SONAR.h>
+//#include <SONAR.h>
+#include "Modules/Motor_temp.hpp"
 
+// Sensor positions
 //         - - - - - - - - - - - - - - - -
 //        /       power switch            \
 //       /                                 \
@@ -17,19 +19,13 @@
 //      |  wheel2                    wheel1 |
 //      |                                   |
 //      |                                   |
-//      \                                   /
-//       \  sonar3    sonar 2    sonar 1   /
+//       \                                  /
+//        \  sonar3     sonar 2    sonar 1 /
 //         \                              /
-//           \                           /
-//             -  -  -  -  -  -  -  -  -
-//         bumper_R  bumper_C  bumper_L
-//
-//
-//
-//
-//
-//
-//
+//          \                            /
+//            -  -  -  -  -  -  -  -  -
+//          bumper_R    bumper_C    bumper_L
+
 /******************************************/
 /*
 // SONAR
@@ -57,85 +53,86 @@ void sonarsUpdate() {
 // Optional device
 // Infrared Sensor
 /*
-unsigned char irL0_pin=0;    // Analog
-unsigned char irC0_pin=1;
-unsigned char irR0_pin=2;
+const uint8_t irL0_pin=0;    // Analog
+const uint8_t irC0_pin=1;
+const uint8_t irR0_pin=2;
 
 int ir_distance(unsigned char ir) {
 	int val=analogRead(ir);
 	return (6762/(val-9))-4;
 }
- */
-/*********************************************/
-// bumper
-unsigned char bumperL_pin = 12;
-unsigned char bumperC_pin = 3;
-unsigned char bumperR_pin = 2;
+*/
 
-/*********************************************/
+// Bumper
+uint8_t bumper_left = 1;//12;
+uint8_t bumper_center = 2;
+uint8_t bumper_right = 3;
 
-irqISR(irq1, isr1);
-MotorWheel wheel1(9, 8, 4, 5, &irq1, REDUCTION_RATIO, int(144 * PI));
+motor::IRQ_struct irq_left;
+motor::IRQ_struct irq_right;
+motor::Motor_temp wheel_left(9, 8, 4, 5, &irq_left);
+motor::Motor_temp wheel_right(10, 11, 6, 7, &irq_right);
 
-irqISR(irq2, isr2);
-MotorWheel wheel2(10, 11, 6, 7, &irq2, REDUCTION_RATIO, int(144 * PI));
-//MotorWheel wheel2(3, 2, 6, 7, &irq2, REDUCTION_RATIO, int(144*PI));
-
-R2WD _2WD(&wheel1, &wheel2, WHEELSPAN);
-unsigned int speedMMPS = 80;
-
-void setup()
-{
-  //TCCR0B=TCCR0B&0xf8|0x01;    // warning!! it will change millis()
-  //TCCR1B=TCCR1B&0xf8|0x01;    // Pin9,Pin10 PWM 31250Hz
-  //TCCR2B=TCCR2B&0xf8|0x01;    // Pin3,Pin11 PWM 31250Hz
-
-  analogWriteFrequency(31250);
-  analogWriteResolution(8);
-
-  //SONAR::init(13);    // Pin13 as RW Control
-
-  _2WD.PIDEnable(0.35, 0.02, 0, 10);
-
-  Serial.begin(115200);
-  Serial.println("Hello");
-}
+uint8_t horn = 0;
 
 void stop_wheels()
 {
-  wheel1.runPWM(0, DIR_ADVANCE, false);
-  wheel2.runPWM(0, DIR_ADVANCE, false);
-  delay(500);
+  wheel_left.runPWM(0, motor::direction::Advance);
+  wheel_right.runPWM(0, motor::direction::Advance);
+  delay(250);
 }
 
-const uint16_t delay_msec = 1000;
+void is_bumper_pressed()
+{
+  bool is_left = digitalRead(bumper_left);
+  bool is_center = digitalRead(bumper_center);
+  bool is_right = digitalRead(bumper_right);
+
+  bool error_bip = (!is_left || !is_center || !is_right) ? true : false;
+
+  digitalWrite(horn, error_bip);
+
+  Serial.println("Left: " + String(is_left) + "\t\t" +
+                 "Center: " + String(is_center) + "\t" +
+                 "Right: " + String(is_right) + "\t\t" +
+                 "Beep: " + String(error_bip));
+}
+
+void setup()
+{
+  // Begin serial
+  Serial.begin(115200);
+
+  // Set bumper values
+  pinMode(bumper_left, INPUT);
+  pinMode(bumper_center, INPUT);
+  pinMode(bumper_right, INPUT);
+  pinMode(horn, OUTPUT);
+  digitalWrite(horn, LOW);
+
+  // Set wheel PWM
+  analogWriteFrequency(31250);
+  analogWriteResolution(8);
+
+  // Initialize wheels
+  wheel_left.runPWM(0, motor::direction::Advance);
+  wheel_right.runPWM(0, motor::direction::Advance);
+}
+
+const uint16_t delay_msec = 250;
+const uint8_t left = 0;
+const uint8_t right = 0;
+uint8_t counter = 0;
 void loop()
 {
-  // ADVANCE - ADVANCE
-  Serial.println("ADVANCE - ADVANCE");
-  wheel1.runPWM(255, DIR_ADVANCE);
-  wheel2.runPWM(255, DIR_ADVANCE);
-  delay(delay_msec);
-  stop_wheels();
+  //wheel_left.runPWM(left + counter, motor::direction::Advance);
+  //wheel_right.runPWM(right + counter, motor::direction::Advance);
+  //delay(delay_msec);
+  //stop_wheels();
+  //delay(delay_msec);
+  //Serial.println(counter);
+  //counter++;
 
-  // ADVANCE - BACKOFF
-  Serial.println("ADVANCE - BACKOFF");
-  wheel1.runPWM(255, DIR_ADVANCE);
-  wheel2.runPWM(255, DIR_BACKOFF);
-  delay(delay_msec);
-  stop_wheels();
-
-  // BACKOFF - ADVANCE
-  Serial.println("BACKOFF - ADVANCE");
-  wheel1.runPWM(255, DIR_BACKOFF);
-  wheel2.runPWM(255, DIR_ADVANCE);
-  delay(delay_msec);
-  stop_wheels();
-
-  // BACKOFF - BACKOFF
-  Serial.println("BACKOFF - BACKOFF");
-  wheel1.runPWM(255, DIR_BACKOFF);
-  wheel2.runPWM(255, DIR_BACKOFF);
-  delay(delay_msec);
-  stop_wheels();
+  is_bumper_pressed();
+  delay(100);
 }
