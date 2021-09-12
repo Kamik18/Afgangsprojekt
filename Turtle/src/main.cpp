@@ -104,11 +104,7 @@ void setup() {
     encoder::timer.resume();
 }
 
-const uint16_t delay_msec = 500;
-const uint8_t  left       = 0;
-const uint8_t  right      = 0;
-uint8_t        counter    = 0;
-void           loop() {
+void loop() {
     is_bumper_pressed();
     delay(10);
 }
