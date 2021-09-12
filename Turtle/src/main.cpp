@@ -1,5 +1,8 @@
+
+#include "Modules/Encoder.hpp"
 #include "Modules/Motor.hpp"
 #include <Arduino.h>
+#include <HardwareTimer.h>
 #include <Wire.h>
 
 // Pinout
@@ -10,6 +13,10 @@ const uint8_t bumper_right  = 2;
 
 // Horn
 const uint8_t horn = 10;
+
+// Encoder
+const uint8_t enc_left  = 4;
+const uint8_t enc_right = 5;
 
 // Motor instances
 const motor::Motor wheel_left(3, 12);
@@ -62,12 +69,21 @@ void setup() {
     // Begin serial
     Serial.begin(115200);
 
-    // Set bumper values
+    // Set pinouts
+    // Bumper
     pinMode(bumper_left, INPUT);
     pinMode(bumper_center, INPUT);
     pinMode(bumper_right, INPUT);
+    // Horn
     pinMode(horn, OUTPUT);
     digitalWrite(horn, LOW);
+    // Encoder
+    pinMode(enc_left, INPUT_PULLUP);
+    pinMode(enc_right, INPUT_PULLUP);
+
+    // Attach interrupts to the digital pins
+    attachInterrupt(enc_left, encoder::isr_left, CHANGE);
+    attachInterrupt(enc_right, encoder::isr_right, CHANGE);
 
     // Configurate wheel PWM
     analogWriteFrequency(31250);
@@ -82,19 +98,16 @@ void setup() {
     Wire.onRequest(requestEvent);
     Wire.onReceive(receiveEvent);
 
-    Serial.println("Test script");
-    // Test script
-    wheel_left.runPWM(25, motor::direction::Forward);
-    wheel_right.runPWM(125, motor::direction::Reverse);
-    delay(2000);
-    wheel_left.runPWM(0, motor::direction::Forward);
-    wheel_right.runPWM(0, motor::direction::Reverse);
+    // Start the hardwaretimer
+    encoder::timer.attachInterrupt(encoder::velocity);
+    encoder::timer.setOverflow(2, HERTZ_FORMAT);
+    encoder::timer.resume();
 }
 
 const uint16_t delay_msec = 500;
 const uint8_t  left       = 0;
 const uint8_t  right      = 0;
-uint8_t        counter    = 25;
+uint8_t        counter    = 0;
 void           loop() {
     is_bumper_pressed();
     delay(10);

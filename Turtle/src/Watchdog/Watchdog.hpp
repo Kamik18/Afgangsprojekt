@@ -11,7 +11,7 @@
 //-------------------------------------------------------------------
 // Watchdog namespace
 //-------------------------------------------------------------------
-namespace iotsensor_module_watchdog {
+namespace watchdog {
     class Watchdog {
       public:
         //-----------------------------
@@ -42,4 +42,4 @@ namespace iotsensor_module_watchdog {
         // @return bool - True if the timeout is accepted.
         bool is_wdg_timeout(const uint32_t timeout) const;
     };
-} // namespace iotsensor_module_watchdog
+} // namespace watchdog

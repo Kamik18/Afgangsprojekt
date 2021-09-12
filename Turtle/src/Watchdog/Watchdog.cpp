@@ -11,9 +11,7 @@
 #include "stm32wbxx_ll_iwdg.h"
 #include "stm32wbxx_ll_rcc.h"
 
-using iotsensor_module_watchdog::Watchdog;
-
-namespace iotsensor_module_watchdog {
+namespace watchdog {
     //-----------------------------
     // @brief Starts the watchdog.
     // @param timeout - The timeout for the watchdog.
@@ -87,4 +85,4 @@ namespace iotsensor_module_watchdog {
         // Return if the timeout is valid
         return ((timeout >= min_timeout) && (timeout <= max_timeout));
     }
-} // namespace iotsensor_module_watchdog
+} // namespace watchdog
