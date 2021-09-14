@@ -61,6 +61,16 @@ void receiveEvent(int howMany) {
 }
 
 void requestEvent() {
+    encoder::state_x;
+    encoder::state_y;
+    encoder::state_theata;
+    std::array<uint8_t, 1 + (3 * sizeof(double))> data;
+
+    data.at(0) = is_bumper_pressed();
+    memcpy(&data.at(1 + 0 * sizeof(double)), &encoder::state_x, sizeof(double));
+    memcpy(&data.at(1 + 1 * sizeof(double)), &encoder::state_y, sizeof(double));
+    memcpy(&data.at(1 + 2 * sizeof(double)), &encoder::state_theata, sizeof(double));
+
     // Return if bumper is pressed
     Wire.write(is_bumper_pressed());
 }
@@ -100,7 +110,7 @@ void setup() {
 
     // Start the hardwaretimer
     encoder::timer.attachInterrupt(encoder::velocity);
-    encoder::timer.setOverflow(2, HERTZ_FORMAT);
+    encoder::timer.setOverflow(10, HERTZ_FORMAT);
     encoder::timer.resume();
 }
 
