@@ -72,7 +72,7 @@ void requestEvent() {
     memcpy(&data.at(1 + 2 * sizeof(double)), &encoder::state_theata, sizeof(double));
 
     // Return if bumper is pressed
-    Wire.write(is_bumper_pressed());
+    Wire.write(data.data(), data.size());
 }
 
 void setup() {

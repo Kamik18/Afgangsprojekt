@@ -23,7 +23,7 @@ namespace encoder {
     const double tick_conversion = (wheel_circ / static_cast<double>(ecoder_ticks));
 
     // Measured in meter
-    const double distance_between_wheel = 0.25;
+    const double distance_between_wheel = 0.29;
 
     // Position in meter
     double state_x      = 0;
