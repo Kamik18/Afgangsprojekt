@@ -4,6 +4,7 @@ import smbus
 import math
 import atexit
 import time
+import struct
 
 def goodbye():
     print("Program exited successfully!")
@@ -16,13 +17,12 @@ address = 25
 # Wait for I2C module to be ready
 time.sleep(1)
 
-
-
 class MyCtr(Controller):
 
     camera = False 
     max_value = 32768
-    prev_value = 0
+    prev_drive_value = 0
+    prev_turn_value = 0
 
     # Data package
     left_pwm = 40   # 0 - 255
@@ -43,22 +43,22 @@ class MyCtr(Controller):
             return 0
         else:
             new_value = math.trunc((abs(value) / MyCtr.max_value) * 255)
-            if new_value > MyCtr.prev_value:
-                MyCtr.prev_value = MyCtr.prev_value + 1
+            if new_value > MyCtr.prev_drive_value:
+                MyCtr.prev_turn_value = MyCtr.prev_turn_value + 1
             else:
-                MyCtr.prev_value = new_value
-            return MyCtr.prev_value
+                MyCtr.prev_turn_value = new_value
+            return MyCtr.prev_turn_value
 
     def get_motor_value_buttons(value):
         if value is 0:
             return 0
         else:
             new_value = math.trunc(((value+MyCtr.max_value) / (MyCtr.max_value*2)) * 255)
-            if new_value > MyCtr.prev_value:
-                MyCtr.prev_value = MyCtr.prev_value + 1
+            if new_value > MyCtr.prev_drive_value:
+                MyCtr.prev_drive_value = MyCtr.prev_drive_value + 1
             else:
-                MyCtr.prev_value = new_value
-            return MyCtr.prev_value
+                MyCtr.prev_drive_value = new_value
+            return MyCtr.prev_drive_value
 
     def set_left_pwm(value):
         MyCtr.left_pwm = MyCtr.get_motor_value_analog(value)
@@ -68,12 +68,14 @@ class MyCtr(Controller):
 
     # Turn on and off camera
     def on_x_press(self):
-        if MyCtr.camera is True:
-            print("Turn off camera")
-            MyCtr.camera = False
-        else:
-            print("Turn on Camera")
-            MyCtr.camera = True
+        data = bus.read_i2c_block_data(address, 0, 25)
+        print("bumper pressed: ", data[0])
+        print("x: ", struct.unpack('d', bytearray(data[1:9]))[0])
+        print("y: ", struct.unpack('d', bytearray(data[9:17]))[0])
+        print("angle: ", struct.unpack('d', bytearray(data[17:]))[0])
+
+    def on_x_release(self):
+        pass
 
     def on_R2_press(self, value):
         MyCtr.drive_forward = True
@@ -98,6 +100,7 @@ class MyCtr(Controller):
         MyCtr.left_wheel = 0
         MyCtr.right_wheel = 1
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
         bus.write_i2c_block_data(address, 0, data)
 
     def on_L2_press(self, value):
@@ -129,12 +132,14 @@ class MyCtr(Controller):
         MyCtr.drive_forward = False
         MyCtr.left_pwm = MyCtr.right_pwm = 0
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        MyCtr.prev_drive_value = 0
         bus.write_i2c_block_data(address, 0, data)
     
     def on_L2_release(self):
         MyCtr.drive_reverse = False
         MyCtr.left_pwm = MyCtr.right_pwm = 0
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        MyCtr.prev_drive_value = 0
         bus.write_i2c_block_data(address, 0, data)
 
     def on_R3_up(self, value):
@@ -177,6 +182,7 @@ class MyCtr(Controller):
         MyCtr.drive_forward = False
         MyCtr.drive_reverse = False
         if MyCtr.turn_right == MyCtr.turn_left:
+            MyCtr.prev_drive_value = 0
             MyCtr.left_pwm = MyCtr.right_pwm = 0
             data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
             bus.write_i2c_block_data(address, 0, data)
@@ -185,6 +191,7 @@ class MyCtr(Controller):
         MyCtr.turn_left = False
         MyCtr.turn_right = False
         if MyCtr.drive_forward == MyCtr.drive_reverse:
+            MyCtr.prev_drive_value = 0
             MyCtr.left_pwm = MyCtr.right_pwm = 0
             data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
             bus.write_i2c_block_data(address, 0, data)
@@ -252,6 +259,7 @@ class MyCtr(Controller):
         MyCtr.turn_left = False
         MyCtr.turn_right = False
         if MyCtr.drive_forward == MyCtr.drive_reverse:
+            MyCtr.prev_turn_value = 0
             MyCtr.left_pwm = MyCtr.right_pwm = 0
             data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
             bus.write_i2c_block_data(address, 0, data)
@@ -260,9 +268,49 @@ class MyCtr(Controller):
         MyCtr.turn_left = False
         MyCtr.turn_right = False
         if MyCtr.drive_forward == MyCtr.drive_reverse:
+            MyCtr.prev_turn_value = 0
             MyCtr.left_pwm = MyCtr.right_pwm = 0
             data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
             bus.write_i2c_block_data(address, 0, data)
+
+    def drive(boolean_value):
+        while boolean_value or MyCtr.prev_drive_value == 255:
+            MyCtr.prev_drive_value = MyCtr.prev_drive_value + 1
+            data = [MyCtr.prev_drive_value, MyCtr.left_wheel, MyCtr.prev_drive_value, MyCtr.right_wheel]
+            bus.write_i2c_block_data(address, 0, data)
+            time.sleep(0.01)
+
+        if not boolean_value:
+            MyCtr.prev_drive_value = 0
+
+    def on_up_arrow_press(self):
+        MyCtr.left_wheel = 0
+        MyCtr.right_wheel = 1
+        MyCtr.drive(True)
+
+    def on_up_down_arrow_release(self):
+        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        MyCtr.drive(False)
+
+    def on_down_arrow_press(self):
+        MyCtr.left_wheel = 1
+        MyCtr.right_wheel = 0
+        MyCtr.drive(True)
+        
+
+    def on_left_arrow_press(self):
+        MyCtr.left_wheel = 1
+        MyCtr.right_wheel = 1
+        MyCtr.drive(True)
+
+    def on_left_right_arrow_release(self):
+        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        MyCtr.drive(False)
+
+    def on_right_arrow_press(self):
+        MyCtr.left_wheel = 0
+        MyCtr.right_wheel = 0
+        MyCtr.drive(True)
         
 
     # Do nothing commands
