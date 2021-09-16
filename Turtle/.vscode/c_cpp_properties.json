@@ -1,0 +1,117 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "c:/Users/Bruger/Documents/GitHub/Afgangsprojekt/Turtle/include",
+                "c:/Users/Bruger/Documents/GitHub/Afgangsprojekt/Turtle/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Wire/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/avr",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/LL",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/OpenAMP",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/hid",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/cdc",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32WBxx_HAL_Driver/Inc",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32WBxx_HAL_Driver/Src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/STM32WBxx",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/open-amp/lib/include",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/libmetal/lib/include",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/virtual_driver",
+                "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32WBxx/Include",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32WBxx/Source/Templates/gcc",
+                "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/DSP/Include",
+                "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/variants/STM32WBxx/WB55R(C-E-G)V",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Keyboard/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Mouse/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SPI/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Servo/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SoftwareSerial/src",
+                "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SrcWrapper/src",
+                "C:/Users/Bruger/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "c:/Users/Bruger/Documents/GitHub/Afgangsprojekt/Turtle/include",
+                    "c:/Users/Bruger/Documents/GitHub/Afgangsprojekt/Turtle/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Wire/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/avr",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/LL",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/OpenAMP",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/hid",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/cdc",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32WBxx_HAL_Driver/Inc",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32WBxx_HAL_Driver/Src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/STM32WBxx",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/open-amp/lib/include",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/libmetal/lib/include",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/virtual_driver",
+                    "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32WBxx/Include",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32WBxx/Source/Templates/gcc",
+                    "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/DSP/Include",
+                    "C:/Users/Bruger/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/cores/arduino",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/variants/STM32WBxx/WB55R(C-E-G)V",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Keyboard/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Mouse/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SPI/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/Servo/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SoftwareSerial/src",
+                    "C:/Users/Bruger/.platformio/packages/framework-arduinoststm32/libraries/SrcWrapper/src",
+                    "C:/Users/Bruger/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=50200",
+                "STM32WB55xx",
+                "STM32WBxx",
+                "ARDUINO=10808",
+                "ARDUINO_ARCH_STM32",
+                "ARDUINO_P_NUCLEO_WB55RG",
+                "BOARD_NAME=\"P_NUCLEO_WB55RG\"",
+                "HAL_UART_MODULE_ENABLED",
+                "USE_FULL_LL_DRIVER",
+                "VARIANT_H=\"variant_P_NUCLEO_WB55RG.h\"",
+                ""
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "C:/Users/Bruger/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mfpu=fpv4-sp-d16",
+                "-mfloat-abi=hard",
+                "-mcpu=cortex-m4",
+                "-mthumb",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
