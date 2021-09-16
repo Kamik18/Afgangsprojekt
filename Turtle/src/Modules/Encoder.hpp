@@ -17,7 +17,7 @@ namespace encoder {
     // Wheel circumference = 0.145 m * pi = 0.46 m
     // 1536 ticks = 0.46 m
     const uint16_t ecoder_ticks = 64 * 24;
-    const double   wheel_radius = 0.145 / 2;
+    const double   wheel_radius = 0.1438 / 2;
     const double   wheel_circ   = wheel_radius * 2 * PI;
     // Conversion to 1 tick = 0.0003 m
     const double tick_conversion = (wheel_circ / static_cast<double>(ecoder_ticks));
@@ -33,7 +33,6 @@ namespace encoder {
     void velocity() {
         uint32_t ticks     = HAL_GetTick();
         double   time_span = static_cast<double>(ticks - prev_ticks) / 1000;
-        Serial.println("Ticks: " + String(enc_left) + ", " + String(enc_right));
 
         // Measured in meters
         double distance_left  = tick_conversion * static_cast<double>(enc_left);
@@ -46,18 +45,16 @@ namespace encoder {
         // Delta theta
         const double delta_theta       = (distance_right - distance_left) / (distance_between_wheel);
         const double rotation_velocity = delta_theta / time_span;
-        Serial.println("Rotation: " + String(rotation_velocity) + " rad/s");
 
         // Distance traveled
-        const double dist_traveled = (distance_left - distance_right) / 2;
-        Serial.println("Distance: " + String(dist_traveled * 100) + " cm");
+        const double dist_traveled = (distance_left + distance_right) / 2;
 
         // Update states
         state_x      = state_x + (dist_traveled * cos(state_theata));
         state_y      = state_y + (dist_traveled * sin(state_theata));
         state_theata = state_theata + delta_theta;
-        Serial.println("x: " + String(state_x) + " m");
-        Serial.println("y: " + String(state_y) + " m");
+        Serial.println("x: " + String(state_x * 100) + " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
+        Serial.println("y: " + String(state_y * 100) + " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
         Serial.println("theata: " + String(state_theata) + " rad");
         Serial.println();
     }
