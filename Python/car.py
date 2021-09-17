@@ -5,6 +5,7 @@ import math
 import atexit
 import time
 import struct
+import subprocess
 
 def goodbye():
     print("Program exited successfully!")
@@ -25,10 +26,10 @@ class MyCtr(Controller):
     prev_turn_value = 0
 
     # Data package
-    left_pwm = 40   # 0 - 255
+    left_pwm = 0   # 0 - 255
     left_wheel = 0  # 0 (forward) - 1 (reverse)
-    right_pwm = 40  # 0 - 255
-    right_wheel = 0 # 0 (reverse) - 1 (forward)
+    right_pwm = 0  # 0 - 255
+    right_wheel = 1 # 0 (reverse) - 1 (forward)
 
     drive_forward = False
     drive_reverse = False
@@ -55,16 +56,17 @@ class MyCtr(Controller):
         else:
             new_value = math.trunc(((value+MyCtr.max_value) / (MyCtr.max_value*2)) * 255)
             if new_value > MyCtr.prev_drive_value:
-                MyCtr.prev_drive_value = MyCtr.prev_drive_value + 1
+                MyCtr.prev_drive_value = MyCtr.prev_drive_value + 2
             else:
                 MyCtr.prev_drive_value = new_value
             return MyCtr.prev_drive_value
 
     def set_left_pwm(value):
-        MyCtr.left_pwm = MyCtr.get_motor_value_analog(value)
-
+        #MyCtr.left_pwm = MyCtr.get_motor_value_analog(value)
+        MyCtr.left_pwm = MyCtr.get_motor_value_buttons(value)
     def set_right_pwm(value):
-        MyCtr.right_pwm = MyCtr.get_motor_value_analog(value)
+        #MyCtr.right_pwm = MyCtr.get_motor_value_analog(value)
+        MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
 
     # Turn on and off camera
     def on_x_press(self):
@@ -77,67 +79,47 @@ class MyCtr(Controller):
     def on_x_release(self):
         pass
 
-    def on_R2_press(self, value):
-        MyCtr.drive_forward = True
-        MyCtr.drive_reverse = False
-        if MyCtr.turn_left:
-            MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
-            if (MyCtr.left_pwm > MyCtr.right_pwm) and MyCtr.right_pwm is not 0:
-                if MyCtr.left_pwm > 200:
-                    MyCtr.left_pwm = 0
-                else:
-                    MyCtr.left_pwm = math.trunc((MyCtr.left_pwm / 255) * MyCtr.right_pwm)
-        elif MyCtr.turn_right:
-            MyCtr.left_pwm = MyCtr.get_motor_value_buttons(value)
-            if (MyCtr.right_pwm > MyCtr.left_pwm) and MyCtr.left_pwm is not 0:
-                if MyCtr.left_pwm > 200:
-                    MyCtr.left_pwm = 0
-                else:
-                    MyCtr.right_pwm = math.trunc((MyCtr.right_pwm / 255 ) * MyCtr.left_pwm)
-        else:
-            MyCtr.left_pwm = MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
-        
+    def on_square_press(self):
+        MyCtr.on_x_press
         MyCtr.left_wheel = 0
         MyCtr.right_wheel = 1
+        MyCtr.left_pwm = 181
+        MyCtr.right_pwm = 150
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
+        bus.write_i2c_block_data(address, 0, data)  
+
+    def on_square_release(self):
+        MyCtr.left_pwm = 0
+        MyCtr.right_pwm = 0
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
+        bus.write_i2c_block_data(address, 0, data)  
+    
+    def on_R2_press(self,value):
+        MyCtr.left_wheel = 0
+        MyCtr.right_wheel = 1
+        MyCtr.set_right_pwm(value)
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
+        bus.write_i2c_block_data(address, 0, data)  
+    
+    def on_L2_press(self,value):
+        MyCtr.left_wheel = 0
+        MyCtr.right_wheel = 1
+        MyCtr.set_left_pwm(value)
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
         print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
         bus.write_i2c_block_data(address, 0, data)
 
-    def on_L2_press(self, value):
-        MyCtr.drive_forward = False
-        MyCtr.drive_reverse = True
-        if MyCtr.turn_left:
-            MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
-            if (MyCtr.left_pwm > MyCtr.right_pwm) and MyCtr.right_pwm is not 0:
-                if MyCtr.left_pwm > 200:
-                    MyCtr.left_pwm = 0
-                else:
-                    MyCtr.left_pwm = math.trunc((MyCtr.left_pwm / 255) * MyCtr.right_pwm)
-        elif MyCtr.turn_right:
-            MyCtr.left_pwm = MyCtr.get_motor_value_buttons(value)
-            if (MyCtr.right_pwm > MyCtr.left_pwm) and MyCtr.left_pwm is not 0:
-                if MyCtr.left_pwm > 200:
-                    MyCtr.left_pwm = 0
-                else:
-                    MyCtr.right_pwm = math.trunc((MyCtr.right_pwm / 255 ) * MyCtr.left_pwm)
-        else:
-            MyCtr.left_pwm = MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
-        
-        MyCtr.left_wheel = 1
-        MyCtr.right_wheel = 0
-        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
-        bus.write_i2c_block_data(address, 0, data)
-
     def on_R2_release(self):
-        MyCtr.drive_forward = False
-        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        MyCtr.right_pwm = 0
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
         MyCtr.prev_drive_value = 0
         bus.write_i2c_block_data(address, 0, data)
     
     def on_L2_release(self):
-        MyCtr.drive_reverse = False
-        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        MyCtr.left_pwm = 0
         data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
         MyCtr.prev_drive_value = 0
         bus.write_i2c_block_data(address, 0, data)
@@ -274,12 +256,11 @@ class MyCtr(Controller):
             bus.write_i2c_block_data(address, 0, data)
 
     def drive(boolean_value):
-        while boolean_value or MyCtr.prev_drive_value == 255:
+        while boolean_value and MyCtr.prev_drive_value < 255:
             MyCtr.prev_drive_value = MyCtr.prev_drive_value + 1
             data = [MyCtr.prev_drive_value, MyCtr.left_wheel, MyCtr.prev_drive_value, MyCtr.right_wheel]
             bus.write_i2c_block_data(address, 0, data)
             time.sleep(0.01)
-
         if not boolean_value:
             MyCtr.prev_drive_value = 0
 
@@ -347,12 +328,71 @@ atexit.register(goodbye)
 
 # Gpio 12 is pwm for turning. Gpio 5 and 6 is used to determine which direction.
 
-controller = MyCtr(interface="/dev/input/js0", connecting_using_ds4drv=False)
+#controller = MyCtr(interface="/dev/input/js0", connecting_using_ds4drv=False)
 # you can start listening before controller is paired, as long as you pair it within the timeout window
 
-controller.listen(timeout=60)   
+#controller.listen(timeout=60)   
 
+# Test
+subprocess.call("./reset.sh")
+time.sleep(1)
+left_wheel = 0
+right_wheel = 1
+left_pwm = 136
+right_pwm = 100
+
+data = bus.read_i2c_block_data(address, 0, 25)
+data[0] = 0
+x = 0
+y = 0
+angle = 0
+prev_angle = 0
+try:
+    while x < 4.5 and not data[0]:
+        data = bus.read_i2c_block_data(address, 0, 25)
+        prev_angle = angle
+        x = struct.unpack('d', bytearray(data[1:9]))[0]
+        y = struct.unpack('d', bytearray(data[9:17]))[0]
+        angle = struct.unpack('d', bytearray(data[17:]))[0]
+
+        if angle < 0 and not prev_angle < angle:
+            if left_pwm > 90:
+                left_pwm = left_pwm - 2
+        elif angle > 0 and not prev_angle > angle:
+            left_pwm = left_pwm + 2
         
+        data_transmit = [left_pwm, left_wheel, right_pwm, right_wheel]
+        print("Left_pwm: ", left_pwm, " and Right_pwm: ", right_pwm)
+        print("x: ", x)
+        print("y: ", y)
+        print("angle: ", angle)
+        print(" ")
+        bus.write_i2c_block_data(address, 0, data_transmit)
+        time.sleep(0.1)
+
+except KeyboardInterrupt:
+    left_pwm = 0
+    right_pwm = 0
+    data = [left_pwm, left_wheel, right_pwm, right_wheel]
+    bus.write_i2c_block_data(address, 0, data) 
+
+left_pwm = 0
+right_pwm = 0
+data = [left_pwm, left_wheel, right_pwm, right_wheel]
+bus.write_i2c_block_data(address, 0, data) 
+
+time.sleep(1)
+data = bus.read_i2c_block_data(address, 0, 25)
+prev_angle = angle
+x = struct.unpack('d', bytearray(data[1:9]))[0]
+y = struct.unpack('d', bytearray(data[9:17]))[0]
+angle = struct.unpack('d', bytearray(data[17:]))[0]
+print("Left_pwm: ", left_pwm, " and Right_pwm: ", right_pwm)
+print("x: ", x)
+print("y: ", y)
+print("angle: ", angle)
+print(" ")
+
 """
     def buzz(noteFreq, duration):
         halveWaveTime = 1 / (noteFreq * 2 )
@@ -371,4 +411,72 @@ controller.listen(timeout=60)
             MyController.buzz(n, duration[t])
             time.sleep(duration[t] *0.1)
             t+=1
+"""
+
+
+"""
+    def on_R2_press(self, value):
+        MyCtr.drive_forward = True
+        MyCtr.drive_reverse = False
+        if MyCtr.turn_left:
+            MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
+            if (MyCtr.left_pwm > MyCtr.right_pwm) and MyCtr.right_pwm is not 0:
+                if MyCtr.left_pwm > 200:
+                    MyCtr.left_pwm = 0
+                else:
+                    MyCtr.left_pwm = math.trunc((MyCtr.left_pwm / 255) * MyCtr.right_pwm)
+        elif MyCtr.turn_right:
+            MyCtr.left_pwm = MyCtr.get_motor_value_buttons(value)
+            if (MyCtr.right_pwm > MyCtr.left_pwm) and MyCtr.left_pwm is not 0:
+                if MyCtr.left_pwm > 200:
+                    MyCtr.left_pwm = 0
+                else:
+                    MyCtr.right_pwm = math.trunc((MyCtr.right_pwm / 255 ) * MyCtr.left_pwm)
+        else:
+            MyCtr.left_pwm = MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
+        
+        MyCtr.left_wheel = 0
+        MyCtr.right_wheel = 1
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        print("Left_pwm: ", MyCtr.left_pwm, " and Right_pwm: ", MyCtr.right_pwm)
+        bus.write_i2c_block_data(address, 0, data)
+
+    def on_L2_press(self, value):
+        MyCtr.drive_forward = False
+        MyCtr.drive_reverse = True
+        if MyCtr.turn_left:
+            MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
+            if (MyCtr.left_pwm > MyCtr.right_pwm) and MyCtr.right_pwm is not 0:
+                if MyCtr.left_pwm > 200:
+                    MyCtr.left_pwm = 0
+                else:
+                    MyCtr.left_pwm = math.trunc((MyCtr.left_pwm / 255) * MyCtr.right_pwm)
+        elif MyCtr.turn_right:
+            MyCtr.left_pwm = MyCtr.get_motor_value_buttons(value)
+            if (MyCtr.right_pwm > MyCtr.left_pwm) and MyCtr.left_pwm is not 0:
+                if MyCtr.left_pwm > 200:
+                    MyCtr.left_pwm = 0
+                else:
+                    MyCtr.right_pwm = math.trunc((MyCtr.right_pwm / 255 ) * MyCtr.left_pwm)
+        else:
+            MyCtr.left_pwm = MyCtr.right_pwm = MyCtr.get_motor_value_buttons(value)
+        
+        MyCtr.left_wheel = 1
+        MyCtr.right_wheel = 0
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        bus.write_i2c_block_data(address, 0, data)
+
+    def on_R2_release(self):
+        MyCtr.drive_forward = False
+        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        MyCtr.prev_drive_value = 0
+        bus.write_i2c_block_data(address, 0, data)
+    
+    def on_L2_release(self):
+        MyCtr.drive_reverse = False
+        MyCtr.left_pwm = MyCtr.right_pwm = 0
+        data = [MyCtr.left_pwm, MyCtr.left_wheel, MyCtr.right_pwm, MyCtr.right_wheel]
+        MyCtr.prev_drive_value = 0
+        bus.write_i2c_block_data(address, 0, data)
 """
