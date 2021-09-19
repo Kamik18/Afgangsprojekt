@@ -17,7 +17,7 @@ namespace encoder {
     // Wheel circumference = 0.145 m * pi = 0.46 m
     // 1536 ticks = 0.46 m
     const uint16_t ecoder_ticks = 64 * 24;
-    const double   wheel_radius = 0.135 / 2;
+    const double   wheel_radius = 0.143 / 2;
     const double   wheel_circ   = wheel_radius * 2 * PI;
     // Conversion to 1 tick = 0.0003 m
     const double tick_conversion = (wheel_circ / static_cast<double>(ecoder_ticks));
