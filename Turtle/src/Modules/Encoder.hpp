@@ -26,17 +26,21 @@ namespace encoder {
     const double distance_between_wheel = 0.29;
 
     // Position in meter
-    double state_x      = 0;
-    double state_y      = 0;
-    double state_theata = 0;
+    double state_x        = 0;
+    double state_y        = 0;
+    double state_theata   = 0;
+    double time_span      = 0;
+    double distance_left  = 0;
+    double distance_right = 0;
 
     void velocity() {
-        uint32_t ticks     = HAL_GetTick();
-        double   time_span = static_cast<double>(ticks - prev_ticks) / 1000;
+        uint32_t ticks = HAL_GetTick();
+        time_span      = static_cast<double>(ticks - prev_ticks) / 1000;
+        prev_ticks = ticks;
 
         // Measured in meters
-        double distance_left  = tick_conversion * static_cast<double>(enc_left);
-        double distance_right = tick_conversion * static_cast<double>(enc_right);
+        distance_left  = tick_conversion * static_cast<double>(enc_left);
+        distance_right = tick_conversion * static_cast<double>(enc_right);
 
         // Clear encoders
         enc_left  = 0;
@@ -53,8 +57,10 @@ namespace encoder {
         state_x      = state_x + (dist_traveled * cos(state_theata));
         state_y      = state_y + (dist_traveled * sin(state_theata));
         state_theata = state_theata + delta_theta;
-        Serial.println("x: " + String(state_x * 100) + " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
-        Serial.println("y: " + String(state_y * 100) + " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
+        Serial.println("x: " + String(state_x * 100) +
+                       " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
+        Serial.println("y: " + String(state_y * 100) +
+                       " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
         Serial.println("theata: " + String(state_theata) + " rad");
         Serial.println();
     }
