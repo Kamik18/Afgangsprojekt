@@ -1,8 +1,13 @@
 from Modules.utils import compute_traj
 from Modules.lqr_control import *
+import subprocess
+import time
 
 if __name__ == '__main__':
     print("LQR steering control tracking start")
+
+    subprocess.call("./../reset.sh")
+    time.sleep(1)
  
     # Create the track waypoints
     ax = [0, 0.1, 5]
