@@ -23,13 +23,24 @@ const uint8_t enc_right = 5;
 const motor::Motor wheel_left(3, 12);
 const motor::Motor wheel_right(11, 13);
 
+pid::PidStruct *test_pid = &pid::left_pid;
+
 void pid::regulator() {
     left_pid.input  = encoder::distance_left / encoder::time_span;
-    right_pid.input = encoder::distance_left / encoder::time_span;
+    right_pid.input = encoder::distance_right / encoder::time_span;
+
     left_pid.pid.Compute();
     right_pid.pid.Compute();
+
     wheel_left.runPWM(left_pid.output * 100, motor::direction::Forward);
     wheel_right.runPWM(right_pid.output * 100, motor::direction::Reverse);
+
+    const uint16_t factor = 1000;
+    //const uint16_t bottom = 0;
+    //const uint16_t top    = right_pid.setpoint * factor;
+    // Serial.println(String(bottom) + "," + String(top) + "," + String(left_pid.input * factor) +
+    //               "," + String(right_pid.input * factor));
+    Serial.println(String(test_pid->setpoint * factor) + "," + String(test_pid->input * factor));
 }
 
 bool is_bumper_pressed() {
@@ -48,8 +59,8 @@ bool is_bumper_pressed() {
 
         // Update PID setpoint
         pid::set_setpoint(&pid::left_pid, 0);
-        pid::left_pid.output = 0;
         pid::set_setpoint(&pid::right_pid, 0);
+        pid::left_pid.output  = 0;
         pid::right_pid.output = 0;
         return true;
     } else {
@@ -94,7 +105,7 @@ void receiveEvent(int howMany) {
     Wire.read();
 
     // Read the 4 incoming bytes
-    // order: [left_pwm, left_dir, left_dir, left_pwm]
+    // order: [left_pwm, left_dir, right_dir, right_pwm]
     if ((Wire.available() == 2) && (!is_bumper_pressed())) {
         set_speed(Wire.read(), Wire.read());
     } else if ((Wire.available() == 4) && (!is_bumper_pressed())) {
@@ -162,7 +173,8 @@ void setup() {
     pid::right_pid.pid.SetMode(AUTOMATIC);
     pid::left_pid.pid.SetOutputLimits(0, 2.55);
     pid::right_pid.pid.SetOutputLimits(0, 2.55);
-    set_speed((0.4 * 100), 0);
+    set_speed((0.0 * 100), 0);
+    pid::set_setpoint(test_pid, 0);
 
     // Start the hardwaretimer
     encoder::timer.attachInterrupt(encoder::velocity);
@@ -175,11 +187,18 @@ void setup() {
 }
 
 void loop() {
-    is_bumper_pressed();
-    delay(100);
+    // is_bumper_pressed();
+    // delay(100);
 
-    if (encoder::state_x > 4) {
-        pid::set_setpoint(&pid::left_pid, 0);
-        pid::set_setpoint(&pid::right_pid, 0);
-    }
+    pid::set_setpoint(test_pid, 0.4);
+    delay(10000);
+    pid::set_setpoint(test_pid, 0.2);
+    delay(10000);
+    pid::set_setpoint(test_pid, 0);
+    delay(10000);
+
+    // if (encoder::state_x > 4) {
+    //    pid::set_setpoint(&pid::left_pid, 0);
+    //    pid::set_setpoint(&pid::right_pid, 0);
+    //}
 }

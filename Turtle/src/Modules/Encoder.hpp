@@ -57,11 +57,11 @@ namespace encoder {
         state_x      = state_x + (dist_traveled * cos(state_theata));
         state_y      = state_y + (dist_traveled * sin(state_theata));
         state_theata = state_theata + delta_theta;
-        Serial.println("x: " + String(state_x * 100) +
-                       " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
-        Serial.println("y: " + String(state_y * 100) +
-                       " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
-        Serial.println("theata: " + String(state_theata) + " rad");
-        Serial.println();
+        //Serial.println("x: " + String(state_x * 100) +
+        //               " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
+        //Serial.println("y: " + String(state_y * 100) +
+        //               " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
+        //Serial.println("theata: " + String(state_theata) + " rad");
+        //Serial.println();
     }
 } // namespace encoder
