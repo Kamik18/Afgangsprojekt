@@ -58,6 +58,37 @@ bool is_bumper_pressed() {
     }
 }
 
+//-----------------------------------------------------------
+// @brief Set the speed setpoint for both motors.
+// @param lin The linear velocity.
+// @param ang The angular velocity.
+void set_speed(double lin, double ang) {
+    wheel_left.runPWM(Wire.read(), motor::direction::Forward);
+    wheel_right.runPWM(Wire.read(), motor::direction::Reverse);
+
+    lin /= 100;
+    ang /= 100;
+    const double ang_vel = ang * (encoder::distance_between_wheel / 2);
+
+    double left  = lin - ang_vel;
+    double right = lin + ang_vel;
+
+    if (left < 0) {
+        left = 0;
+    }
+    if (right < 0) {
+        right = 0;
+    }
+    if (left > 0.8) {
+        left = 0.8;
+    }
+    if (right > 0.8) {
+        right = 0.8;
+    }
+    pid::set_setpoint(&pid::left_pid, left);
+    pid::set_setpoint(&pid::right_pid, right);
+}
+
 void receiveEvent(int howMany) {
     // Dummy read
     Wire.read();
@@ -65,8 +96,7 @@ void receiveEvent(int howMany) {
     // Read the 4 incoming bytes
     // order: [left_pwm, left_dir, left_dir, left_pwm]
     if ((Wire.available() == 2) && (!is_bumper_pressed())) {
-        wheel_left.runPWM(Wire.read(), motor::direction::Forward);
-        wheel_right.runPWM(Wire.read(), motor::direction::Reverse);
+        set_speed(Wire.read(), Wire.read());
     } else if ((Wire.available() == 4) && (!is_bumper_pressed())) {
         wheel_left.runPWM(Wire.read(), static_cast<motor::direction>(Wire.read()));
         wheel_right.runPWM(Wire.read(), static_cast<motor::direction>(Wire.read()));
@@ -132,8 +162,7 @@ void setup() {
     pid::right_pid.pid.SetMode(AUTOMATIC);
     pid::left_pid.pid.SetOutputLimits(0, 2.55);
     pid::right_pid.pid.SetOutputLimits(0, 2.55);
-    pid::set_setpoint(&pid::left_pid, 0.4);
-    pid::set_setpoint(&pid::right_pid, 0.4);
+    set_speed((0.4 * 100), 0);
 
     // Start the hardwaretimer
     encoder::timer.attachInterrupt(encoder::velocity);
@@ -147,7 +176,7 @@ void setup() {
 
 void loop() {
     is_bumper_pressed();
-    delay(10);
+    delay(100);
 
     if (encoder::state_x > 4) {
         pid::set_setpoint(&pid::left_pid, 0);
