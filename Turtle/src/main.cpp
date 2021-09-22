@@ -36,11 +36,7 @@ void pid::regulator() {
     wheel_right.runPWM(right_pid.output * 100, motor::direction::Reverse);
 
     const uint16_t factor = 1000;
-    //const uint16_t bottom = 0;
-    //const uint16_t top    = right_pid.setpoint * factor;
-    // Serial.println(String(bottom) + "," + String(top) + "," + String(left_pid.input * factor) +
-    //               "," + String(right_pid.input * factor));
-    Serial.println(String(test_pid->setpoint * factor) + "," + String(test_pid->input * factor));
+    // Serial.println(String(test_pid->setpoint * factor) + "," + String(test_pid->input * factor));
 }
 
 bool is_bumper_pressed() {
@@ -78,7 +74,7 @@ void set_speed(double lin, double ang) {
     wheel_right.runPWM(Wire.read(), motor::direction::Reverse);
 
     lin /= 100;
-    ang /= 100;
+    ang /= 1000;
     const double ang_vel = ang * (encoder::distance_between_wheel / 2);
 
     double left  = lin - ang_vel;
@@ -98,6 +94,9 @@ void set_speed(double lin, double ang) {
     }
     pid::set_setpoint(&pid::left_pid, left);
     pid::set_setpoint(&pid::right_pid, right);
+
+    Serial.println("lin: " + String(lin) + ", ang_vel: " + String(ang_vel) + ", left: " + String(left) +
+                   ", right: " + String(right));
 }
 
 void receiveEvent(int howMany) {
