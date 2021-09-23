@@ -1,16 +1,17 @@
 #include <Arduino.h>
-#include <PID_v1.h>
+#include "PID/PID_v1.h"
 
 namespace pid {
     // Create a hardwaretimer
     HardwareTimer timer(TIM16);
 
     // PID struct
-    double Kp = 2, Ki = 1, Kd = 0.25;
+    //double Kp = 1.5, Ki = 2, Kd = 0.05;
+    double Kp = 3, Ki = 2, Kd = 0.05;
     struct PidStruct {
         double input;
         double output;
-        double setpoint;
+        double setpoint = 0;
 
         PID pid = PID(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
     };

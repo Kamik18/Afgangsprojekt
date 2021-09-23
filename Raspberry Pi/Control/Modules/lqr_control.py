@@ -7,6 +7,7 @@ the state (i.e. x position, y position, yaw angle) at each timestep
 import numpy as np
 import matplotlib.pyplot as plt
 from Modules.kinematics import *
+import math
 import smbus
 import struct
 
@@ -15,18 +16,23 @@ show_animation = False
 bus = smbus.SMBus(1)
 address = 25
 
+def constrain(val, min_val, max_val):
+    if val < min_val: return min_val
+    if val > max_val: return max_val
+    return val
 
-def closed_loop_prediction(desired_traj):
+def closed_loop_prediction(target_pos):
     # Simulation Parameters
-    T = desired_traj.shape[0]  # Maximum simulation time
-    goal_dis = 0.01  # How close we need to get to the goal
-    goal = desired_traj[-1, :]  # Coordinates of the goal
-    dt = 0.1  # Timestep interval
+    goal_dist = 0.01  # How close we need to get to the goal
+    goal =  np.array([target_pos[0], target_pos[1], math.atan2(target_pos[1], target_pos[0])])
+    print("goal: ", goal)
+
+    dt = 0.05  # Timestep interval
     time = 0.0  # Starting time
 
     # Initial States
     # Initial state of the car
-    state = np.array([desired_traj[0, 0], desired_traj[0, 1], 0])
+    state = np.array([target_pos[0], target_pos[1], 0])
 
     # Get the Cost-to-go and input cost matrices for LQR
     Q = get_Q()  # Defined in kinematics.py
@@ -43,18 +49,23 @@ def closed_loop_prediction(desired_traj):
     traj = np.array([state])
 
     ind = 0
-    while T >= time:
+    while True:
         # Point to track
         ind = int(np.floor(time))
 
         # Generate optimal control commands
         u_lqr = dLQR(DiffDrive, Q, R, state, goal[0:3], dt)
-        print("u_lqr: ", u_lqr)
 
         # Set motor speed
-        input = [int(np.uint8(u_lqr[0] * 1000)),
-                 int(np.uint8(u_lqr[1] * 10000 + 128))]
-        bus.write_i2c_block_data(address, 0, input)
+        cmd = [0, 0, 0]
+        if (u_lqr[1] > 0):
+            cmd[0] = constrain(int(abs(u_lqr[0]) * 100), 0, 255)
+            cmd[1] = constrain(int(abs(u_lqr[1]) * 1000), 0, 255)
+        else:
+            cmd[0] = constrain(int(abs(u_lqr[0]) * 100), 0, 255)
+            cmd[2] = constrain(int(abs(u_lqr[1]) * 1000), 0, 255)
+        print(cmd)
+        bus.write_i2c_block_data(address, 0, cmd)
 
         # Add sensors and update position
         # Move forwad in time
@@ -67,40 +78,20 @@ def closed_loop_prediction(desired_traj):
         state[0] = x
         state[1] = y
         state[2] = angle
-        print("State: ", state)
+        print("State: ", np.around(state, 3))
         
-        if (data[0] == 1) or (state[0] > goal[0]):
-            print("bumper pressed")
-            bus.write_i2c_block_data(address, 0, [0, 128])
-            return t, traj
-        
-
         # Store the trajectory and estimated trajectory
         t.append(time)
         traj = np.concatenate((traj, [state]), axis=0)
 
-        # Check to see if the robot reached goal
-        if np.linalg.norm(state[0:2]-goal[0:2]) <= goal_dis:
-            print("Goal reached")
-            break
 
+        if (data[0] == 1) or (state[0] > (goal[0] + goal_dist)):
+            print("goal: ", goal)
+            bus.write_i2c_block_data(address, 0, [0, 0, 0])
+            return t, traj
+            
         time = time + dt
         
-        '''
-        # Plot the vehicles trajectory
-        if time % 1 < 0.1 and show_animation:
-            plt.cla()
-            plt.plot(desired_traj[:, 0],
-                     desired_traj[:, 1], "-r", label="course")
-            plt.plot(traj[:, 0], traj[:, 1], "ob", label="trajectory")
-            plt.legend()
-            plt.axis("equal")
-            plt.grid(True)
-            plt.title("speed[m/s]:" + str(round(np.mean(u_lqr), 2)) +
-                      ",target index:" + str(ind))
-            plt.pause(0.0001)
-        '''
-    
-    bus.write_i2c_block_data(address, 0, [0, 128])
+    bus.write_i2c_block_data(address, 0, [0, 0, 0])
     
     return t, traj
