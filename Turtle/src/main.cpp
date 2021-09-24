@@ -31,7 +31,7 @@ void pid::regulator() {
     left_pid.pid.Compute();
     right_pid.pid.Compute();
 
-    wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output, motor::direction::Forward);
+    wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
     wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
 
     // Serial.println(String(left_pid.input) + "," + String(left_pid.output) + "," + String(right_pid.input) + "," +
@@ -75,8 +75,16 @@ void set_speed(const double lin, const double ang_p, const double ang_n) {
     const double lin_vel = constrain(lin / 255, 0, 1);
 
     const double ang_vel = constrain(((ang_p - ang_n) / 100) * (encoder::distance_between_wheel / 2.0), -1, 1);
-    const double left    = constrain(((lin_vel - ang_vel) * 50.0), 0, 60);
-    const double right   = constrain(((lin_vel + ang_vel) * 50.0), 0, 60);
+    double       left    = constrain(((lin_vel - ang_vel) * 50.0), 0, 60);
+    double       right   = constrain(((lin_vel + ang_vel) * 50.0), 0, 60);
+
+    if (255 == ang_n) {
+        left  = 5;
+        right = 0;
+    } else if (255 == ang_p) {
+        left  = 0;
+        right = 5;
+    }
 
     pid::set_setpoint(&pid::left_pid, (left == 0) ? 0 : (left + pid::left_pid.setpoint) / 2.0);
     pid::set_setpoint(&pid::right_pid, (right == 0) ? 0 : (right + pid::right_pid.setpoint) / 2.0);
@@ -155,8 +163,8 @@ void setup() {
     pid::left_pid.pid.SetMode(AUTOMATIC);
     pid::right_pid.pid.SetMode(AUTOMATIC);
 
-    pid::left_pid.pid.SetOutputLimits(50, 255);
-    pid::right_pid.pid.SetOutputLimits(50, 255);
+    pid::left_pid.pid.SetOutputLimits(80, 255);
+    pid::right_pid.pid.SetOutputLimits(80, 255);
 
     pid::left_pid.pid.SetSampleTime(20);
     pid::right_pid.pid.SetSampleTime(20);
