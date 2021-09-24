@@ -24,7 +24,7 @@ def constrain(val, min_val, max_val):
 def closed_loop_prediction(target_pos):
     # Simulation Parameters
     goal_dist = 0.01  # How close we need to get to the goal
-    goal =  np.array([target_pos[0], target_pos[1], math.atan2(target_pos[1], target_pos[0])])
+    goal =  np.array([target_pos[0] * 10, target_pos[1] * 10, math.atan2(target_pos[1], target_pos[0])])
     print("goal: ", goal)
 
     dt = 0.05  # Timestep interval
@@ -55,15 +55,15 @@ def closed_loop_prediction(target_pos):
 
         # Generate optimal control commands
         u_lqr = dLQR(DiffDrive, Q, R, state, goal[0:3], dt)
-
+        
         # Set motor speed
         cmd = [0, 0, 0]
         if (u_lqr[1] > 0):
             cmd[0] = constrain(int(abs(u_lqr[0]) * 100), 0, 255)
-            cmd[1] = constrain(int(abs(u_lqr[1]) * 1000), 0, 255)
+            cmd[1] = constrain(int(abs(u_lqr[1]) * 5000), 0, 255)
         else:
             cmd[0] = constrain(int(abs(u_lqr[0]) * 100), 0, 255)
-            cmd[2] = constrain(int(abs(u_lqr[1]) * 1000), 0, 255)
+            cmd[2] = constrain(int(abs(u_lqr[1]) * 5000), 0, 255)
         print(cmd)
         bus.write_i2c_block_data(address, 0, cmd)
 
@@ -85,7 +85,7 @@ def closed_loop_prediction(target_pos):
         traj = np.concatenate((traj, [state]), axis=0)
 
 
-        if (data[0] == 1) or (state[0] > (goal[0] + goal_dist)):
+        if (data[0] == 1) or (state[0] > (target_pos[0] + goal_dist)):
             print("goal: ", goal)
             bus.write_i2c_block_data(address, 0, [0, 0, 0])
             return t, traj

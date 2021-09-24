@@ -291,7 +291,7 @@ def get_Q():
       :return: Q: State cost matrix (3x3 matrix because the state vector is 
                   (X, Y, THETA))
     """
-    Q = np.array([[1.0, 0.0, 0.0],  # Penalize X position error (global coordinates)
-                  [0.0, 1.0, 0.0],  # Penalize Y position error (global coordinates)
-                  [0.0, 0.0, 0.005]]) # Penalize heading error (global coordinates)
+    Q = np.array([[2.0, 0.0, 0.0],  # Penalize X position error (global coordinates)
+                  [0.0, 10.0, 0.0],  # Penalize Y position error (global coordinates)
+                  [0.0, 0.0, 0.01]]) # Penalize heading error (global coordinates)
     return Q
