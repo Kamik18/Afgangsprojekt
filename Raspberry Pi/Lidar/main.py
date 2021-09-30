@@ -4,12 +4,30 @@ from Modules import hokuyo
 from Modules import serial_port
 from Modules import feature
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button
 import math
 import time
 import os
 import numpy as np
 import cv2
+import smbus
+import struct
+import subprocess
 
+# Gloabl variable
+theta_multiplier = 1.0
+robot_poses = []
+laser_data = []
+global_lines = []
+global_points = []
+
+# UART - Lidar communication
+uart_port = '/dev/ttyACM0'
+uart_speed = 19200
+
+# I2C - Arduino communication
+bus = smbus.SMBus(1)
+address = 25
 
 def goodbye():
     print('get_version_info')
@@ -21,10 +39,9 @@ def goodbye():
     print('laser_off')
     print(laser.laser_off())
     print('Complete')
+    exit(0)
 
 # Euclidian distance from point 1 to point 2
-
-
 def dist_points(point1, point2):
     Px = (point1[0] - point2[0]) ** 2
     Py = (point1[1] - point2[1]) ** 2
@@ -32,7 +49,7 @@ def dist_points(point1, point2):
 
 
 def in_line(point1, point2, point3):
-    dist = dist_points(point2, point3)
+    dist = dist_points(point1, point3)
     if (dist < 1):
         dist = 1
 
@@ -48,53 +65,109 @@ def in_line(point1, point2, point3):
         return 0
 
 
-uart_port = '/dev/ttyACM0'
-uart_speed = 19200
+def AD2pos(distance, angle, robot_position):
+    x = distance * np.cos(angle - robot_position[2]) + robot_position[0]
+    y = -distance * np.sin(angle - robot_position[2]) + robot_position[1]
+    return (int(x), int(y))
 
-featureDetect = feature.featureDetection()
 
-if __name__ == '__main__':
-    # '''
-    # data_set = [(-35, -62), (-36, -64), (-36, -64), (-35, -64), (-36, -66), (-35, -67), (-36, -69), (-35, -69), (-34, -67), (-34, -67), (-33, -68), (-33, -68), (-33, -70), (-34, -72), (-34, -74), (-34, -74), (-34, -75), (-33, -75), (-33, -77), (-33, -77), (-35, -84), (-35, -85), (-34, -85), (-36, -91), (-36, -92), (-37, -97), (-36, -97), (-34, -93), (-34, -93), (-35, -97), (-33, -94), (-33, -97), (-32, -97), (-32, -97), (-31, -98), (-32, -102), (-33, -107), (-32, -108), (-32, -108), (-31, -108), (-32, -114), (-33, -121), (-37, -139), (-53, -204), (-57, -223), (-60, -240), (-59, -243), (-61, -257), (-59, -258), (-57, -258), (-56, -258), (-53, -255), (-52, -255), (-50, -256), (-49, -256), (-47, -253), (-46, -261), (-44, -257), (-42, -257), (-40, -251), (-39, -257), (-38, -258), (-36, -257), (-34, -257), (-33, -257), (-31, -258), (-29, -255), (-28, -255), (-26, -255), (-25, -255), (-23, -251), (-21, -256), (-20, -252), (-18, -252), (-17, -261), (-15, -261), (-13, -255), (-12, -261), (-11, -261), (-9, -258), (-7, -260), (-6, -261), (-4, -267), (-3, -267), (-1, -268), (0, -272), (1, -272), (3, -278), (5, -273), (6, -273), (8, -273), (10, -273), (11, -271), (13, -271), (15, -270), (16, -266), (18, -266), (19, -266), (21, -266), (23, -264), (24, -263), (26, -263), (27, -263), (29, -263), (31, -263), (32, -258), (33, -254), (34, -254), (36, -254), (37, -254), (39, -250), (40, -250), (41, -249), (43, -250), (45, -248), (46, -249), (47, -247), (50, -250), (51, -249), (53, -249), (54, -249), (56, -249), (58, -252), (60, -251), (61, -252), (63, -252), (65, -252), (66, -252), (68, -250), (69, -249), (70, -249), (72, -248), (73, -248), (75, -247), (76, -245), (78, -246), (80, -247), (80, -243), (84, -249), (86, -250), (88, -249), (89, -249), (91, -248), (92, -247), (93, -246), (97, -252), (99, -252), (100, -251), (102, -251), (104, -251), (106, -251), (107, -250), (111, -255), (125, -282), (127, -281), (129, -280), (130, -279), (126, -267), (126, -263), (128, -261), (128, -257), (128, -253), (126, -246), (127, -244), (127, -241), (128, -239), (123, -227), (124, -225), (125, -224), (125, -220), (125, -217), (126, -215), (124, -209), (124, -207), (123, -203), (124, -201), (123, -196), (123, -194), (124, -193), (124, -190), (123, -185), (124, -185), (123, -181), (123, -179), (123, -177), (120, -169), (120, -168), (120, -165), (119, -162), (120, -162), (121, -161), (119, -156), (120, -155), (120, -153), (121, -152), (117, -146), (118, -145), (119, -145), (117, -140), (116, -137), (115, -135), (116, -134), (114, -130), (115, -130), (116, -130), (118, -130), (118, -128), (119, -127), (118, -125), (118, -123), (118, -122), (119, -122), (121, -122), (123, -122), (124, -122), (123, -119), (124, -119), (124, -117), (119, -112), (118, -109), (118, -108), (119, -107), (119, -106), (120, -105), (118, -103), (120, -103), (121, -102), (121, -102), (122, -101), (123, -100), (122, -99), (123, -98), (124, -97), (121, -94), (121, -93), (121, -92), (122, -91), (115, -85), (116, -84), (116, -84), (117, -83), (117, -82), (119, -82), (119, -81), (119, -80), (119, -79), (118, -77), (116, -75), (117, -74), (117, -74), (117, -72), (117, -72), (120, -72), (120, -71), (120, -70), (121, -70), (121, -69), (121, -68), (122, -67), (121, -66), (121, -65), (122, -65), (120, -63), (120, -62), (121, -61), (121, -60), (121, -60), (125, -60), (119, -56), (125, -59), (127, -58), (127, -57), (120, -53), (121, -53), (122, -52), (119, -50), (122, -51), (123, -50), (124, -50), (125, -49), (127, -49), (127, -48), (127, -47), (126, -46), (125, -45), (125, -44), (125, -43), (125, -42), (125, -41), (125, -41), (126, -40), (126, -39), (127, -39), (127, -38), (126, -37), (119, -34), (119, -33), (119, -32), (119, -32), (123, -32), (124, -31), (121, -30), (119, -28), (121, -28), (119, -27), (121, -26), (121, -26), (121, -25), (121, -24), (121, -23), (118, -22), (119, -21), (119, -21), (123, -21), (123, -20), (123, -19), (120, -18), (119, -17), (118, -16), (117, -15), (118, -14), (118, -14), (117, -13), (117, -12), (117, -11), (118, -11), (118, -10),
-    #        (119, -9), (120, -9), (120, -8), (120, -7), (122, -7), (120, -6), (122, -5), (122, -4), (122, -4), (127, -3), (131, -2), (127, -1), (125, -1), (125, 0), (123, 0), (123, 1), (123, 1), (121, 2), (125, 3), (125, 4), (125, 5), (121, 5), (118, 6), (117, 6), (117, 7), (117, 8), (119, 9), (120, 10), (120, 10), (120, 11), (119, 12), (120, 12), (120, 13), (120, 14), (121, 15), (120, 16), (119, 16), (119, 17), (119, 18), (119, 18), (119, 19), (119, 20), (119, 21), (119, 21), (118, 22), (118, 23), (118, 24), (118, 24), (118, 25), (113, 25), (117, 26), (116, 27), (112, 27), (115, 28), (116, 29), (116, 30), (119, 32), (119, 32), (119, 33), (117, 33), (117, 34), (115, 34), (116, 35), (116, 36), (116, 37), (115, 37), (116, 38), (116, 39), (118, 41), (117, 41), (117, 42), (117, 43), (117, 43), (115, 44), (117, 45), (115, 45), (114, 46), (113, 46), (113, 47), (112, 47), (111, 48), (112, 49), (115, 51), (117, 53), (117, 54), (114, 54), (113, 54), (113, 54), (111, 54), (112, 56), (112, 57), (112, 58), (110, 57), (112, 59), (111, 60), (112, 61), (112, 62), (112, 63), (112, 64), (112, 65), (113, 66), (113, 67), (114, 69), (115, 71), (115, 71), (118, 74), (117, 75), (117, 76), (114, 75), (116, 77), (116, 78), (114, 78), (115, 80), (115, 80), (114, 81), (115, 82), (118, 86), (118, 87), (117, 88), (117, 88), (116, 89), (116, 90), (115, 90), (114, 91), (115, 93), (115, 94), (112, 93), (111, 93), (111, 94), (110, 95), (110, 95), (111, 97), (111, 99), (109, 99), (109, 99), (112, 103), (112, 105), (113, 108), (113, 108), (112, 109), (111, 110), (111, 111), (111, 112), (110, 112), (111, 114), (107, 112), (107, 113), (109, 117), (110, 119), (111, 122), (111, 124), (111, 125), (110, 126), (109, 127), (111, 129), (112, 132), (113, 135), (113, 137), (114, 140), (113, 141), (112, 141), (110, 141), (110, 143), (110, 144), (110, 146), (112, 151), (112, 153), (115, 158), (115, 160), (114, 161), (112, 160), (110, 160), (108, 159), (106, 158), (105, 159), (104, 159), (103, 160), (101, 160), (99, 159), (95, 153), (94, 154), (93, 155), (92, 155), (93, 160), (92, 161), (89, 158), (88, 158), (87, 157), (86, 158), (85, 158), (84, 159), (81, 156), (79, 155), (76, 150), (75, 151), (74, 151), (74, 154), (73, 154), (73, 156), (72, 157), (71, 157), (70, 158), (70, 160), (69, 160), (67, 158), (66, 158), (66, 162), (65, 162), (64, 162), (63, 163), (62, 163), (61, 163), (60, 164), (59, 164), (58, 165), (57, 165), (56, 165), (55, 166), (54, 166), (55, 175), (54, 176), (54, 177), (54, 184), (54, 186), (53, 186), (53, 192), (52, 193), (54, 203), (52, 204), (51, 206), (51, 209), (52, 219), (52, 224), (51, 227), (51, 234), (52, 244), (52, 253), (52, 263), (52, 269), (51, 276), (51, 286), (50, 289), (51, 305), (51, 319), (50, 324), (50, 336), (48, 341), (49, 363), (48, 373), (48, 387), (48, 407), (48, 433), (45, 433), (45, 459), (46, 496), (45, 522), (43, 538), (40, 542), (37, 542), (34, 546), (30, 547), (27, 543), (23, 542), (20, 544), (17, 544), (13, 542), (10, 541), (7, 544), (3, 542), (0, 542), (-2, 545), (-6, 546), (-9, 546), (-13, 547), (-16, 547), (-19, 547), (-22, 541), (-26, 541), (-29, 541), (-32, 541), (-36, 541), (-39, 541), (-42, 541), (-46, 542), (-49, 541), (-53, 541), (-56, 543), (-59, 542), (-62, 540), (-66, 541), (-70, 544), (-73, 541), (-76, 543), (-80, 543), (-83, 540), (-86, 540), (-90, 541), (-93, 539), (-96, 539), (-100, 538), (-103, 538), (-106, 537), (-109, 536), (-113, 537), (-117, 539), (-120, 538), (-124, 537), (-127, 537), (-130, 537), (-134, 536), (-137, 535), (-140, 534), (-144, 533), (-147, 533), (-151, 536), (-155, 535), (-158, 535), (-161, 534), (-164, 531), (-167, 530), (-173, 536), (-176, 535), (-180, 535), (-184, 538), (-188, 538), (-192, 538), (-196, 538), (-199, 536), (-202, 534), (-204, 530), (-207, 529), (-210, 526), (-213, 525), (-216, 523), (-216, 513), (-208, 487), (-130, 299), (-53, 120), (-47, 104), (-47, 102), (-47, 101), (-47, 101), (-48, 100), (-48, 98), (-46, 94), (-47, 93), (-46, 91), (-47, 91), (-47, 89), (-47, 89), (-47, 87), (-47, 86), (-46, 83), (-47, 83), (-46, 80)]
-    data_set = [(-544, -947), (-535, -945), (-529, -947), (-522, -949), (-513, -946), (-503, -941), (-497, -944), (-488, -940), (-481, -943), (-474, -943), (-467, -943), (-460, -943), (-454, -946), (-448, -948), (-439, -944), (-433, -947), (-422, -937), (-416, -939), (-409, -940), (-402, -938), (-395, -939), (-388, -937), (-381, -937), (-375, -938), (-367, -936), (-361, -937), (-356, -940), (-349, -941), (-339, -932), (-333, -933), (-327, -935), (-321, -935), (-314, -932), (-306, -929), (-300, -930), (-293, -927), (-287, -929), (-282, -931), (-276, -931), (-269, -929), (-261, -925), (-255, -926), (-250, -927), (-244, -929), (-238, -929), (-231, -925), (-225, -926), (-219, -926), (-213, -926), (-207, -926), (-201, -925), (-194, -922), (-189, -923), (-183, -923), (-177, -924), (-171, -924), (-166, -926), (-160, -926), (-154, -927), (-147, -921), (-141, -921), (-136, -921), (-130, -922), (-124, -923), (-119, -924), (-113, -927), (-107, -924), (-101, -922), (-95, -917), (-89, -911), (-83, -912), (-78, -913), (-72, -914), (-66, -914), (-61, -914), (-55, -916), (-50, -915), (-44, -916), (-38, -917), (-33, -916), (-27, -916), (-21, -914), (-16, -914), (-10, -914), (-4, -913), (0, -913), (6, -913), (11, -913), (17, -913), (23, -912), (28, -912), (34, -912), (39, -912), (45, -911), (51, -911), (56, -911), (62, -908), (67, -908), (73, -908), (78, -906), (84, -906), (89, -903), (95, -902), (100, -902), (107, -906), (112, -906), (118, -905), (123, -904), (129, -903), (135, -904), (140, -902), (146, -903), (152, -908), (157, -901), (163, -902), (169, -905), (175, -905), (180, -901), (185, -900), (191, -898), (196, -897), (202, -896), (209, -901), (215, -901), (220, -900), (226, -898), (231, -897), (237, -895), (242, -893), (249, -898), (255, -897), (260, -895), (266, -896), (273, -897), (279, -896), (284, -893), (290, -893), (295, -890), (301, -891), (307, -889), (313, -891), (319, -890), (325, -889), (332, -890), (337, -888), (344, -888), (350, -888), (355, -886), (362, -886), (368, -885), (374, -885), (380, -883), (386, -884), (394, -887), (401, -887), (405, -882), (412, -882), (418, -880), (423, -879), (429, -877), (438, -881), (445, -882), (452, -881), (457, -878), (463, -876), (472, -880), (478, -879), (483, -876), (492, -879), (500, -879), (506, -878), (513, -877), (519, -876), (531, -884), (537, -881), (543, -879), (550, -877), (556, -875), (566, -879), (573, -879), (579, -876), (586, -874), (591, -870), (601, -873), (608, -872), (615, -871), (622, -869), (627, -865), (641, -873), (647, -870), (653, -866), (659, -863), (666, -862), (681, -869), (690, -870), (696, -866), (704, -865), (713, -866), (719, -863), (726, -860), (738, -863), (744, -860), (751, -857), (763, -860), (772, -859), (777, -855), (785, -852), (801, -860), (808, -856), (820, -858), (828, -855), (838, -856), (847, -854), (854, -851), (868, -854), (876, -852), (888, -853), (896, -849), (905, -848), (921, -853), (927, -848), (939, -848), (949, -846), (965, -849), (976, -849), (983, -845), (992, -841), (1009, -845), (1020, -844), (1033, -844), (1038, -838), (1053, -839), (1060, -834), (1076, -836), (1091, -837), (1108, -839), (1126, -842), (1135, -838), (1153, -840), (1159, -834), (1174, -834), (1194, -837), (1199, -830), (1204, -822), (1208, -814), (1208, -803), (1203, -790), (1201, -777), (1196, -764), (1195, -753), (1195, -743), (1196, -733), (1192, -720), (1194, -712), (1196, -703), (1189, -689), (1189, -679), (1184, -667), (1188, -660), (1192, -652), (1204, -649), (1218, -647), (1242, -650), (1257, -648), (1275, -648), (1295, -648), (1308, -644), (1330, -645), (1353, -646), (1365, -641), (1387, -641), (1412, -642), (1432, -641), (1458, -642), (1479, -640), (1499, -638), (1515, -634), (1544, -635), (1571, -635), (1593, -632), (1608, -627), (1636, -626), (1659, -623), (1676, -618), (1707, -617), (1735, -616), (1768, -615), (1783, -608), (1819, -608), (1841, -603), (1878, -602), (1912, -600), (1936, -594), (1964, -590), (2006, -589), (2048, -588), (2090, -586), (2125, -582), (2171, -580), (2221, -579), (2256, -573), (2304, -570), (2352, -567), (2394, -561), (2438, -556), (2489, -551),
-                (2535, -545), (2599, -542), (2659, -538), (2711, -531), (2770, -525), (2843, -521), (2904, -514), (2985, -509), (3067, -504), (3159, -499), (3254, -493), (3344, -486), (3450, -480), (3550, -471), (3643, -461), (3762, -453), (3880, -443), (4020, -434), (4166, -423), (4312, -411), (4532, -404), (3134, 574), (2935, 556), (2930, 574), (2926, 592), (2922, 610), (2922, 628), (2933, 650), (2929, 668), (2925, 686), (2879, 694), (2867, 710), (2114, 537), (2033, 530), (2025, 541), (1965, 538), (1932, 542), (1877, 538), (1838, 540), (1784, 536), (1745, 536), (1710, 537), (1674, 537), (1643, 538), (1604, 536), (1575, 537), (1548, 539), (1512, 536), (1488, 538), (1461, 539), (1437, 540), (1405, 538), (1374, 535), (1348, 535), (1323, 534), (1296, 533), (1278, 535), (1247, 531), (1237, 535), (1208, 532), (1191, 533), (1171, 533), (1145, 529), (1127, 530), (1112, 531), (1094, 530), (1075, 529), (1062, 531), (1041, 529), (1023, 528), (1012, 530), (984, 523), (981, 529), (969, 530), (953, 529), (938, 528), (926, 529), (906, 525), (893, 525), (883, 527), (863, 522), (854, 523), (839, 521), (829, 522), (817, 522), (812, 526), (793, 520), (776, 516), (772, 520), (758, 517), (750, 519), (742, 520), (732, 519), (723, 520), (711, 518), (695, 513), (690, 516), (684, 518), (674, 517), (668, 519), (660, 520), (653, 521), (643, 519), (635, 519), (617, 511), (611, 512), (602, 511), (597, 513), (593, 516), (589, 518), (582, 519), (578, 522), (565, 516), (559, 517), (554, 519), (546, 518), (538, 517), (526, 511), (519, 511), (515, 513), (511, 516), (506, 517), (503, 520), (491, 514), (485, 514), (480, 514), (475, 516), (471, 517), (464, 516), (459, 518), (451, 515), (447, 517), (444, 519), (435, 515), (430, 516), (426, 517), (420, 517), (417, 519), (413, 521), (405, 518), (401, 518), (394, 516), (388, 515), (383, 515), (380, 517), (374, 515), (369, 516), (366, 518), (362, 519), (358, 521), (350, 515), (344, 514), (340, 514), (335, 514), (331, 514), (328, 516), (324, 517), (320, 517), (316, 519), (311, 517), (308, 519), (304, 520), (299, 519), (296, 520), (291, 519), (287, 520), (284, 522), (280, 523), (274, 519), (271, 520), (267, 521), (264, 523), (259, 521), (254, 519), (251, 520), (246, 520), (243, 520), (240, 522), (236, 522), (233, 524), (228, 522), (224, 520), (220, 522), (216, 520), (213, 522), (209, 522), (206, 523), (200, 517), (199, 524), (194, 519), (190, 521), (186, 518), (183, 519), (179, 520), (175, 519), (172, 520), (168, 518), (165, 521), (162, 520), (158, 521), (154, 517), (151, 518), (147, 517), (144, 518), (140, 519), (137, 520), (134, 518), (130, 517), (129, 526), (124, 523), (121, 524), (118, 524), (115, 525), (109, 516), (106, 517), (103, 517), (100, 518), (97, 521), (94, 522), (90, 521), (87, 521), (84, 521), (81, 520), (77, 521), (74, 521), (71, 521), (68, 521), (64, 520), (61, 520), (58, 520), (54, 520), (51, 519), (48, 519), (45, 520), (42, 522), (39, 525), (35, 525), (32, 525), (29, 520), (25, 518), (22, 518), (19, 518), (16, 520), (13, 518), (9, 517), (6, 521), (3, 521), (0, 517), (-2, 521), (-6, 521), (-9, 523), (-12, 523), (-15, 524), (-18, 523), (-21, 517), (-25, 517), (-28, 522), (-31, 522), (-34, 521), (-38, 521), (-41, 521), (-44, 521), (-47, 520), (-50, 520), (-54, 520), (-57, 520), (-60, 521), (-63, 521), (-67, 521), (-70, 520), (-73, 519), (-76, 519), (-79, 518), (-83, 518), (-86, 517), (-89, 515), (-92, 514), (-95, 514), (-98, 513), (-101, 512), (-105, 517), (-109, 516), (-113, 519), (-116, 518), (-119, 518), (-122, 517), (-126, 517), (-128, 515), (-131, 513), (-134, 512), (-138, 514), (-142, 516), (-146, 517), (-149, 517), (-153, 516), (-156, 514), (-159, 514), (-165, 521), (-165, 511), (-169, 512), (-174, 518), (-177, 517), (-180, 515), (-184, 515), (-187, 514), (-191, 514), (-195, 516), (-198, 515), (-203, 518), (-206, 517), (-210, 516), (-213, 515), (-217, 515), (-220, 513), (-223, 513), (-226, 511), (-230, 510), (-234, 512), (-238, 512), (-242, 512), (-246, 513), (-249, 510), (-253, 511), (-256, 510), (-260, 509), (-263, 507), (-268, 509), (-271, 507), (-276, 508), (-281, 511), (-286, 513), (-289, 511), (-293, 510)]
+def convert_data_set(data, robot_position=(0, 0, 0)):
+    points = []
+    if not data:
+        pass
+    else:
+        for point in data:
+            length = data[point]
+            if length > 20:
+                coordinates = AD2pos(length, np.radians(point), robot_position)
+                points.append(coordinates)
+    return points
 
-    data = []
-    for item in range(0, len(data_set)):
-        # Remove if closer than 150 mm
-        if (dist_points(data_set[item], (0, 0)) > 150):
-            data.append(data_set[item])
+def create_map():
+    global_lines = []
+    global_points = []
 
-    t0 = time.process_time()
-    break_point = []
-    break_point.append(data[0])
-    # x = []
-    # y = []
-    x, y = zip(*data)
-    for i in range(0, len(data)-2):
-        # Validate the distance is closer than 50 mm
-        if (dist_points(data[i], data[i + 1]) < 50):
-            if (in_line(data[i], data[i + 1], data[i + 2]) < 0.01):
-                # x.append((data[i][0] + data[i + 1][0]) / 2)
-                # y.append((data[i][1] + data[i + 1][1]) / 2) 
-                t = i
-            else: 
-                break_point.append(data[i])
-    break_point.append(data[len(data) - 1])
-    print("Elapsed time: ", time.process_time() - t0)
+    for index in range(0, len(laser_data)):
+        pose = (robot_poses[index][0], robot_poses[index][1], robot_poses[index][2] * theta_multiplier)
+        data_set = convert_data_set(laser_data[index], pose)
+        data = []
+        discarded_data = []
+        for item in range(0, (len(data_set) - 1)):
+            # Remove if closer than 150 mm
+            if (dist_points(data_set[item], (0, 0)) > 150):
+                if (dist_points(data_set[item], data_set[item + 1]) < 100):
+                    point = ((data_set[item][0] + data_set[item + 1][0]) / 2,
+                             (data_set[item][1] + data_set[item + 1][1]) / 2)
+                    data.append(point)
+                else:
+                    data.append(data_set[item])
+            else:
+                discarded_data.append(data_set[item])
+        global_points.append(data)
 
-    break_x, break_y = zip(*break_point)
+        # Find breakpoints
+        lines = []
+        break_point = []
+        for item in range(0, len(data) - 2):
+            # Validate the distance is closer than 50 mm
+            if (dist_points(data[item], data[item + 1]) < 50):
+                if (in_line(data[item], data[item + 1], data[item + 2]) < 0.5):
+                    break_point.append(data[item])
+            else:
+                if (len(break_point) != 0):
+                    lines.append(break_point)
+                    break_point = []
+        lines.append(break_point)
+        global_lines.append(lines)
+    
+    # Plot lines
     plt.cla()
-    plt.plot(x, y, '.')
-    plt.plot(break_x, break_y, '-')
-    plt.legend()
+    if global_points:
+        for i in range(0, len(global_points)):
+            if global_points[i]:
+                x, y = zip(*global_points[i])
+                plt.plot(x, y, '.g')
+    if global_lines:
+        for i in range(0, len(global_lines)):
+            if global_lines[i]:
+                for j in range(0, len(global_lines[i])):
+                    if global_lines[i][j]:
+                        x, y = zip(*global_lines[i][j])
+                        plt.plot(x, y, '-b')
+    #plt.legend()
     plt.axis("equal")
     plt.grid(True)
-    plt.title("Lidar")
+    plt.title("Lidar " + str(theta_multiplier))
+
+    button_theta_p = Button(plt.axes([0.8, 0.025, 0.1, 0.04]), '+', color='lightgoldenrodyellow', hovercolor='0.975')
+    button_theta_n = Button(plt.axes([0.2, 0.025, 0.1, 0.04]), '-', color='lightgoldenrodyellow', hovercolor='0.975')
+    button_update = Button(plt.axes([0.5, 0.025, 0.1, 0.04]), 'Update', color='lightgoldenrodyellow', hovercolor='0.975')
+
+    def minus(event):
+        global theta_multiplier
+        theta_multiplier -= 0.1
+        print(theta_multiplier)
+    button_theta_n.on_clicked(minus)
+
+    def plus(event):
+        global theta_multiplier
+        theta_multiplier += 0.1
+        print(theta_multiplier)
+    button_theta_p.on_clicked(plus)
+    
+    def update(event):
+        plt.close('all')
+        time.sleep(1)
+        create_map()
+    button_update.on_clicked(update)
+
     plt.show()
-    exit(0)
-    # '''
+
+
+if __name__ == '__main__':
+    # Reset the encoder
+    subprocess.call("./reset.sh")
+    time.sleep(1)
 
     laser_serial = serial.Serial(
         port=uart_port, baudrate=uart_speed, timeout=0.5)
@@ -115,167 +188,198 @@ if __name__ == '__main__':
     print("Elapsed time: ", time_elapsed,
           " frequency: ", 1/(time_elapsed / (i+1)))
 
-    data = laser.get_single_scan()
-    featureDetect.laser_points_set(data)
-
-    BREAK_POINT_IND = 0
     try:
+        # Update last position
+        last_pos = (np.inf, np.inf, np.inf)
+
         while (True):
-            data = laser.get_single_scan()
-            featureDetect.laser_points_set(data)
+            # Read state from Arduino
+            data = bus.read_i2c_block_data(address, 0, 25)
+            bumper_preesed = data[0]
+            if (bumper_preesed):
+                print("Data gathered")
+                break
 
-            print(featureDetect.LASERPOINTS)
-            data_file = open("data.dat", "w")
-            for element in featureDetect.LASERPOINTS:
-                data_file.write(str(element))
-            data_file.close()
+            x = struct.unpack('d', bytearray(data[1:9]))[0]
+            y = struct.unpack('d', bytearray(data[9:17]))[0]
+            theta = struct.unpack('d', bytearray(data[17:]))[0]
+            
+            # Update robot position
+            robot_pos = (x * 1000, y * 1000, theta)
 
-            points_x, points_y = zip(*featureDetect.LASERPOINTS)
-            min_x, max_x = abs(min(points_x)), abs(max(points_x))
-            min_y, max_y = abs(min(points_y)), abs(max(points_y))
-            print("min_x: ", min_x)
-            print("min_y: ", min_x)
-            print("max_x: ", max_x)
-            print("max_y: ", max_y)
-
-            edgesMat = np.zeros(
-                (max_y + min_y + 1, max_x + min_x + 1), dtype="uint8")
-
-            for point in featureDetect.LASERPOINTS:
-                x = point[0] + min_x
-                y = point[1] + min_y
-                edgesMat[y, x] = 255
-
-            # Apply edge detection method on the image
-            edgesCanny = cv2.Canny(edgesMat, 50, 150, apertureSize=3)
-            plt.figure()
-            plt.imshow(edgesMat)
-
-            # This returns an array of r and theta values
-            lines = cv2.HoughLines(edgesCanny, 1, np.pi/180, 200)
-            print(lines)
-
-            img = cv2.imread('Lines.png')
-
-            # Convert the img to grayscale
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-            # Apply edge detection method on the image
-            edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-            plt.figure()
-            plt.imshow(edges)
-            plt.show()
-
-            # This returns an array of r and theta values
-            lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
-
-            # The below for loop runs till r and theta values
-            # are in the range of the 2d array
-            for r, theta in lines[0]:
-
-                # Stores the value of cos(theta) in a
-                a = np.cos(theta)
-
-                # Stores the value of sin(theta) in b
-                b = np.sin(theta)
-
-                # x0 stores the value rcos(theta)
-                x0 = a*r
-
-                # y0 stores the value rsin(theta)
-                y0 = b*r
-
-                # x1 stores the rounded off value of (rcos(theta)-1000sin(theta))
-                x1 = int(x0 + 1000*(-b))
-
-                # y1 stores the rounded off value of (rsin(theta)+1000cos(theta))
-                y1 = int(y0 + 1000*(a))
-
-                # x2 stores the rounded off value of (rcos(theta)+1000sin(theta))
-                x2 = int(x0 - 1000*(-b))
-
-                # y2 stores the rounded off value of (rsin(theta)-1000cos(theta))
-                y2 = int(y0 - 1000*(a))
-
-                # cv2.line draws a line in img from the point(x1,y1) to (x2,y2).
-                # (0,0,255) denotes the colour of the line to be
-                # drawn. In this case, it is red.
-                cv2.line(img, (x1, y1), (x2, y2), (128), 2)
-
-            h, w = edgesMat.shape
-
-            plt.figure()
-            plt.imshow(img)
-            plt.figure()
-            plt.imshow(edgesMat)
-            plt.show()
+            # Check if turtle has traveled at least 25 cm
+            if (dist_points(last_pos, robot_pos) > 250):
+                # Append data from sensor
+                laser_data.append(laser.get_single_scan())
+                # Append robot position
+                robot_poses.append(robot_pos)
+                # Update last position
+                last_pos = robot_pos
 
             '''
-            t0 = time.process_time()
-            BREAK_POINT_IND = 0
-            endpoints = [0, 0]
-            PREDICTED_POINTS_TODRAW = []
-            lines = []
+            data = bus.read_i2c_block_data(address, 0, 25)
+            x = struct.unpack('d', bytearray(data[1:9]))[0]
+            y = struct.unpack('d', bytearray(data[9:17]))[0]
+            theta = struct.unpack('d', bytearray(data[17:]))[0] * 1.12
+            
+            robot_pos = (x * 1000, y * 1000, theta)
+            robot_pos = (x * 1000, y * 1000, 0)
 
-            while (BREAK_POINT_IND < (featureDetect.NP - featureDetect .PMIN)):
-                seedSeg = featureDetect.seed_segment_detection(BREAK_POINT_IND)
-                if (seedSeg == False):
-                    print("Seed error")
-                    break
-                else:
-                    seedSegment = seedSeg[0]
-                    PREDICTED_POINTS_TODRAW = seedSeg[1]
-                    INDICES = seedSeg[2]
-                    results = featureDetect.seed_segment_growing(
-                        INDICES, BREAK_POINT_IND)
-                    if (results == False):
-                        BREAK_POINT_IND = INDICES[1]
-                        continue
+            # Check if turtle has traveled at least 25 cm
+            if (dist_points(last_pos, robot_pos) > 250):
+                laser_data = laser.get_single_scan()
+                data_set = convert_data_set(laser_data, robot_pos)
+
+                data = []
+                discarded_data = []
+                for item in range(0, (len(data_set) - 1)):
+                    # Remove if closer than 150 mm
+                    if (dist_points(data_set[item], (0, 0)) > 150):
+                        if (dist_points(data_set[item], data_set[item + 1]) < 100):
+                            point = ((data_set[item][0] + data_set[item + 1][0]) / 2,
+                                     (data_set[item][1] + data_set[item + 1][1]) / 2)
+                            data.append(point)
+                        else:
+                            data.append(data_set[item])
                     else:
-                        line_eq = results[1]
-                        m, c = results[5]
-                        line_seq = results[0]
-                        OUTERMOST = results[2]
-                        BREAK_POINT_IND = results[3]
+                        discarded_data.append(data_set[item])
+                g_points.append(data)
 
-                        endpoints[0] = featureDetect.projection_point2line(
-                            OUTERMOST[0], m, c)
-                        endpoints[1] = featureDetect.projection_point2line(
-                            OUTERMOST[1], m, c)
+                # Find breakpoints
+                break_point = []
+                for i in range(0, len(data) - 2):
+                    # Validate the distance is closer than 50 mm
+                    if (dist_points(data[i], data[i + 1]) < 50):
+                        if (in_line(data[i], data[i + 1], data[i + 2]) < 0.5):
+                            break_point.append(data[i])
+                    else:
+                        if (len(break_point) != 0):
+                            lines.append(break_point)
+                            break_point = []
+                lines.append(break_point)
+                poses.append(robot_pos)
 
-                        lines.append(endpoints.copy())
+                # Increment number of detections
+                count += 1
 
-            print("Number of lines: ", len(lines))
-            print("ENDPOINTS: ", lines)
+                # Update last position
+                last_pos = robot_pos
+
+            if (count > 10):
+                break
+            
+            # Wait a second
+            time.sleep(1)
+            #'''
+            '''
+            laser_data = laser.get_single_scan()
+            data_set = convert_data_set(laser_data, (0, 0, 0))
+            t0 = time.process_time()
+
+            data = []
+            discarded_data = []
+            for item in range(0, (len(data_set) - 1)):
+                # Remove if closer than 150 mm
+                if (dist_points(data_set[item], (0, 0)) > 150):
+                    if (dist_points(data_set[item], data_set[item + 1]) < 100):
+                        point = ((data_set[item][0] + data_set[item + 1][0]) / 2,
+                                 (data_set[item][1] + data_set[item + 1][1]) / 2)
+                        data.append(point)
+                    else:
+                        data.append(data_set[item])
+                else:
+                    discarded_data.append(data_set[item])
+            g_points = data
+
+            # Find breakpoints
+            lines = []
+            break_point = []
+            for i in range(0, len(data) - 2):
+                # Validate the distance is closer than 50 mm
+                if (dist_points(data[i], data[i + 1]) < 50):
+                    if (in_line(data[i], data[i + 1], data[i + 2]) < 0.5):
+                        break_point.append(data[i])
+                else:
+                    if (len(break_point) != 0):
+                        lines.append(break_point)
+                        break_point = []
+            lines.append(break_point)
+
             print("Elapsed time: ", time.process_time() - t0)
-            # '''
 
             plt.cla()
-            points_x, points_y = zip(*featureDetect.LASERPOINTS)
-            plt.plot(points_x, points_y, ".", label="points")
-            # for i in range(len(lines)):
-            #    x = []
-            #    y = []
-            #    for j in range(len(lines[0])):
-            #        x.append(lines[i][j][0])
-            #        y.append(lines[i][j][1])
-            #    plt.plot(x, y)
+            if data:
+                x, y = zip(*data)
+                plt.plot(x, y, '.g', label="Acceptable")
+            if lines:
+                for i in range(0, len(lines)):
+                    if lines[i]:
+                        x, y = zip(*lines[i])
+                        plt.plot(x, y, '-b')
             plt.legend()
             plt.axis("equal")
             plt.grid(True)
             plt.title("Lidar")
-            plt.show()
-            break
+            plt.pause(0.5)
+            #'''
 
     except KeyboardInterrupt:
         print("Interrupted")
-        print('get_version_info')
-        print(laser.get_version_info())
-        print('get_sensor_specs')
-        print(laser.get_sensor_specs())
-        print('reset')
-        print(laser.reset())
-        print('laser_off')
-        print(laser.laser_off())
-        print('Complete')
-        exit(0)
+        # Terminate session
+        goodbye() 
+    
+    '''
+    for index in range(0, len(laser_data)):
+        data_set = convert_data_set(laser_data[index], robot_poses[index])
+        data = []
+        discarded_data = []
+        for item in range(0, (len(data_set) - 1)):
+            # Remove if closer than 150 mm
+            if (dist_points(data_set[item], (0, 0)) > 150):
+                if (dist_points(data_set[item], data_set[item + 1]) < 100):
+                    point = ((data_set[item][0] + data_set[item + 1][0]) / 2,
+                             (data_set[item][1] + data_set[item + 1][1]) / 2)
+                    data.append(point)
+                else:
+                    data.append(data_set[item])
+            else:
+                discarded_data.append(data_set[item])
+        global_points.append(data)
+        # Find breakpoints
+        lines = []
+        break_point = []
+        for item in range(0, len(data) - 2):
+            # Validate the distance is closer than 50 mm
+            if (dist_points(data[item], data[item + 1]) < 50):
+                if (in_line(data[item], data[item + 1], data[item + 2]) < 0.5):
+                    break_point.append(data[item])
+            else:
+                if (len(break_point) != 0):
+                    lines.append(break_point)
+                    break_point = []
+        lines.append(break_point)
+        global_lines.append(lines)
+
+        # Print lines and data
+        plt.cla()
+        if data:
+            x, y = zip(*data)
+            plt.plot(x, y, '.g', label="Acceptable")
+        if lines:
+            for item in range(0, len(lines)):
+                if lines[item]:
+                    x, y = zip(*lines[item])
+                    plt.plot(x, y, '-b')
+        plt.legend()
+        plt.axis("equal")
+        plt.grid(True)
+        plt.title("Lidar: " + str(index + 1) + " of " + str(len(laser_data)))
+        #plt.show()
+        plt.pause(0.5)
+        #'''
+
+
+    create_map()
+
+    # Terminate session
+    goodbye()    
