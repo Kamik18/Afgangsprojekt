@@ -72,7 +72,7 @@ bool is_bumper_pressed() {
 // @param lin The linear velocity.
 // @param ang The angular velocity.
 void set_speed(const double lin, const double ang_p, const double ang_n) {
-    const double lin_vel = constrain(lin / 255, 0, 1);
+    const double lin_vel = constrain(lin, 0, 255) / 255;
 
     const double ang_vel = constrain(((ang_p - ang_n) / 100) * (encoder::distance_between_wheel / 2.0), -1, 1);
     double       left    = constrain(((lin_vel - ang_vel) * 50.0), 0, 60);
@@ -96,14 +96,8 @@ void receiveEvent(int howMany) {
 
     if ((Wire.available() == 3) && (!is_bumper_pressed())) {
         set_speed(Wire.read(), Wire.read(), Wire.read());
-
-        // Read the 4 incoming bytes
-        // order: [left_pwm, left_dir, right_dir, right_pwm]
-    } else if ((Wire.available() == 4) && (!is_bumper_pressed())) {
-        wheel_left.runPWM(Wire.read(), static_cast<motor::direction>(Wire.read()));
-        wheel_right.runPWM(Wire.read(), static_cast<motor::direction>(Wire.read()));
     }
-
+    
     // Clear buffer
     while (Wire.available()) {
         // Read dummy
