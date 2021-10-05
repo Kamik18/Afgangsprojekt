@@ -18,7 +18,7 @@ const uint8_t horn = 10;
 
 // Encoder
 const uint8_t enc_left  = 4;
-const uint8_t enc_right = 5;
+const uint8_t enc_right = 7;
 
 // Motor instances
 const motor::Motor wheel_left(3, 12);
@@ -34,10 +34,9 @@ void pid::regulator() {
     wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
     wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
 
-    // Serial.println(String(left_pid.input) + "," + String(left_pid.output) + "," + String(right_pid.input) + "," +
-    //                String(right_pid.output));
+    Serial.println(String(right_pid.setpoint) + "," + String(right_pid.input) + "," + String(right_pid.output));
     // Serial.println(String(left_pid.input) + "," + String(right_pid.input));
-    Serial.println(String(left_pid.setpoint) + "," + String(right_pid.setpoint));
+    // Serial.println(String(left_pid.setpoint) + "," + String(right_pid.setpoint));
     // Serial.println(String(left_pid.setpoint - right_pid.setpoint));
 }
 
@@ -71,19 +70,20 @@ bool is_bumper_pressed() {
 // @brief Set the speed setpoint for both motors.
 // @param lin The linear velocity.
 // @param ang The angular velocity.
-void set_speed(const double lin, const double ang_p, const double ang_n) {
-    const double lin_vel = constrain(lin, 0, 255) / 255;
+void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
+    const double lin_vel = constrain(lin, 0.0, 255.0) / 255.0;
 
-    const double ang_vel = constrain(((ang_p - ang_n) / 100) * (encoder::distance_between_wheel / 2.0), -1, 1);
-    double       left    = constrain(((lin_vel - ang_vel) * 50.0), 0, 60);
-    double       right   = constrain(((lin_vel + ang_vel) * 50.0), 0, 60);
+    const double ang_vel =
+        constrain((static_cast<double>(ang_p - ang_n) / 100.0) * (encoder::distance_between_wheel / 2.0), -1.0, 1.0);
+    double left  = constrain(((lin_vel - ang_vel) * 50.0), 0.0, 50.0);
+    double right = constrain(((lin_vel + ang_vel) * 50.0), 0.0, 50.0);
 
     if (255 == ang_n) {
-        left  = 5;
-        right = 0;
+        left  = 15.0;
+        right = 0.0;
     } else if (255 == ang_p) {
-        left  = 0;
-        right = 5;
+        left  = 0.0;
+        right = 15.0;
     }
 
     pid::set_setpoint(&pid::left_pid, (left == 0) ? 0 : (left + pid::left_pid.setpoint) / 2.0);
@@ -97,7 +97,7 @@ void receiveEvent(int howMany) {
     if ((Wire.available() == 3) && (!is_bumper_pressed())) {
         set_speed(Wire.read(), Wire.read(), Wire.read());
     }
-    
+
     // Clear buffer
     while (Wire.available()) {
         // Read dummy
