@@ -9,5 +9,4 @@ def install_package(package):
 install_package("matplotlib")
 install_package("numpy")
 install_package("scipy")
-install_package("pygame")
 install_package("opencv-python")

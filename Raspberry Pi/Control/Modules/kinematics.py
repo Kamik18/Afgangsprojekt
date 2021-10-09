@@ -263,7 +263,7 @@ def get_R():
     Output
       :return: R: Input cost matrix
     """
-    R = np.array([[0.1, 0],  # Penalization for linear velocity effort
+    R = np.array([[0.01, 0],  # Penalization for linear velocity effort
                   [0, 0.001]]) # Penalization for angular velocity effort
 
     return R
@@ -291,7 +291,8 @@ def get_Q():
       :return: Q: State cost matrix (3x3 matrix because the state vector is 
                   (X, Y, THETA))
     """
-    Q = np.array([[2.0, 0.0, 0.0],  # Penalize X position error (global coordinates)
-                  [0.0, 10.0, 0.0],  # Penalize Y position error (global coordinates)
-                  [0.0, 0.0, 0.01]]) # Penalize heading error (global coordinates)
+    penalty = 0.3
+    Q = np.array([[penalty, 0.0, 0.0],  # Penalize X position error (global coordinates)
+                  [0.0, penalty, 0.0],  # Penalize Y position error (global coordinates)
+                  [0.0, 0.0, penalty]]) # Penalize heading error (global coordinates)
     return Q

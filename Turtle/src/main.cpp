@@ -23,6 +23,8 @@ const uint8_t enc_right = 7;
 // Motor instances
 const motor::Motor wheel_left(3, 12);
 const motor::Motor wheel_right(11, 13);
+//uint32_t counter = 0;
+//pid::PidStruct *test_pid = &pid::left_pid;
 
 void pid::regulator() {
     left_pid.input  = (encoder::distance_left * 100) / encoder::time_span;
@@ -34,7 +36,8 @@ void pid::regulator() {
     wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
     wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
 
-    Serial.println(String(right_pid.setpoint) + "," + String(right_pid.input) + "," + String(right_pid.output));
+    //Serial.println(String(counter++) + "," + String(test_pid->setpoint) + "," + String(test_pid->input));
+    // Serial.println(String(right_pid.setpoint) + "," + String(right_pid.input) + "," + String(right_pid.output));
     // Serial.println(String(left_pid.input) + "," + String(right_pid.input));
     // Serial.println(String(left_pid.setpoint) + "," + String(right_pid.setpoint));
     // Serial.println(String(left_pid.setpoint - right_pid.setpoint));
@@ -177,12 +180,11 @@ void loop() {
     is_bumper_pressed();
     delay(10);
 
-    /*
-    pid::set_setpoint(test_pid, 40);
-    delay(2000);
-    pid::set_setpoint(test_pid, 20);
-    delay(2000);
-    pid::set_setpoint(test_pid, 0);
-    delay(2000);
-    */
+
+    // pid::set_setpoint(test_pid, 40);
+    // delay(2000);
+    // pid::set_setpoint(test_pid, 20);
+    // delay(2000);
+    // pid::set_setpoint(test_pid, 0);
+    // delay(2000);
 }
