@@ -27,7 +27,13 @@ global_lines = []
 global_points = []
 
 # Create the track waypoints
-goal =  [5.0, 0.0]
+goal = [(0.0, 0.0), (0.0, 0.25), (0.0, 0.5)
+        (0.0, 0.5), (0.25, 0.5), (0.5, 0.5), (0.75, 0.5),
+        (1.0, 0.5), (1.25, 0.5), (1.5, 0.5), (1.75, 0.5),
+        (2.0, 0.5), (2.25, 0.5), (2.5, 0.5), (2.75, 0.5),
+        (3.0, 0.5), (3.25, 0.5), (3.5, 0.5), (3.75, 0.5),
+        (4.0, 0.5), (4.25, 0.5), (4.5, 0.5), (4.75, 0.5),
+        (5.0, 0.5)]
 ax = []
 ay = []
 trajectory = []
@@ -41,6 +47,8 @@ bus = smbus.SMBus(1)
 address = 25
 
 # Euclidian distance from point 1 to point 2
+
+
 def dist_points(point1, point2):
     Px = (point1[0] - point2[0]) ** 2
     Py = (point1[1] - point2[1]) ** 2
@@ -82,14 +90,15 @@ def convert_data_set(data, robot_position=(0, 0, 0)):
                 points.append(coordinates)
     return points
 
+
 def create_map():
     global_lines = []
     global_points = []
     discarded_data = []
 
     for index in range(0, len(laser_data)):
-        pose = (robot_poses[index][0], 
-                robot_poses[index][1], 
+        pose = (robot_poses[index][0],
+                robot_poses[index][1],
                 robot_poses[index][2] * theta_multiplier)
         data_set = convert_data_set(laser_data[index], pose)
         data = []
@@ -120,7 +129,7 @@ def create_map():
                     break_point = []
         lines.append(break_point)
         global_lines.append(lines)
-    
+
     # Plot lines
     plt.cla()
     if global_lines:
@@ -130,7 +139,7 @@ def create_map():
                     if global_lines[i][j]:
                         x, y = zip(*global_lines[i][j])
                         plt.plot(x, y, '-b')
-    #plt.legend()
+    # plt.legend()
     plt.axis("equal")
     plt.grid(True)
     plt.title("Lidar")
@@ -141,6 +150,7 @@ def reset_encoder():
     subprocess.call("./../reset.sh")
     time.sleep(2)
 
+
 def goodbye():
     # Stop the PIDs
     bus.write_i2c_block_data(address, 0, [0, 0, 0])
@@ -148,23 +158,23 @@ def goodbye():
     # Append goal point
     ax.append(goal[0])
     ay.append(goal[1])
-  
+
     # Compute the desired trajectory
-    desired_traj = compute_traj(ax,ay)
+    desired_traj = compute_traj(ax, ay)
 
     # Display the trajectory that the mobile robot executed
     plt.close()
     flg, _ = plt.subplots(1)
-    plt.plot(desired_traj[:,0], desired_traj[:,1], "-b", label="Desired")
+    plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Desired")
     for i in range(len(trajectory)):
-        plt.plot(trajectory[i][:,0], trajectory[i][:,1], "-g")
+        plt.plot(trajectory[i][:, 0], trajectory[i][:, 1], "-g")
     plt.grid(True)
     plt.axis("equal")
     plt.xlabel("x[m]")
     plt.ylabel("y[m]")
     plt.legend()
     plt.show()
-    
+
     # Print traveled distance
     data = bus.read_i2c_block_data(address, 0, 25)
     x = struct.unpack('d', bytearray(data[1:9]))[0]
@@ -173,10 +183,10 @@ def goodbye():
     print("x: ", x)
     print("y: ", y)
     print("angle: ", angle)
-        
+
     # Create a map
     create_map()
-    
+
     print('get_version_info')
     print(laser.get_version_info())
     print('get_sensor_specs')
@@ -187,7 +197,8 @@ def goodbye():
     print(laser.laser_off())
     print('Complete')
     exit(0)
-    
+
+
 atexit.register(goodbye)
 
 if __name__ == '__main__':
@@ -204,21 +215,21 @@ if __name__ == '__main__':
     print(laser.laser_on())
     print(laser.set_high_sensitive(True))
     print(laser.set_motor_speed())
-          
+
     # Reset the encoders
     reset_encoder()
-    
+
     # Append data from sensor
     laser_data.append(laser.get_single_scan())
     # Append robot position
     robot_poses.append([0.0, 0.0, 0.0])
-    
-    for x in np.arange(0.0, goal[0], 0.25):
-        pos, delta_trajectory = closed_loop_prediction([x, 0])
+
+    for target in goal:
+        pos, delta_trajectory = closed_loop_prediction(target)
         trajectory.append(delta_trajectory)
-        ax.append(x)
-        ay.append(0)
-        
+        ax.append(target[0])
+        ay.append(target[1])
+
         # Update robot position
         robot_pos = (pos[0] * 1000, pos[1] * 1000, pos[2])
         # Append data from sensor
@@ -228,4 +239,3 @@ if __name__ == '__main__':
 
     # Stop the PIDs
     bus.write_i2c_block_data(address, 0, [0, 0, 0])
-    

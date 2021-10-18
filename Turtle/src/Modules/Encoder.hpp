@@ -36,7 +36,7 @@ namespace encoder {
     void velocity() {
         uint32_t ticks = HAL_GetTick();
         time_span      = static_cast<double>(ticks - prev_ticks) / 1000;
-        prev_ticks = ticks;
+        prev_ticks     = ticks;
 
         // Measured in meters
         distance_left  = tick_conversion * static_cast<double>(enc_left);
@@ -57,11 +57,11 @@ namespace encoder {
         state_x      = state_x + (dist_traveled * cos(state_theata));
         state_y      = state_y + (dist_traveled * sin(state_theata));
         state_theata = state_theata + delta_theta;
-        //Serial.println("x: " + String(state_x * 100) +
-        //               " cm, added: " + String(dist_traveled * cos(state_theata) * 100) + " cm");
-        //Serial.println("y: " + String(state_y * 100) +
-        //               " cm, added: " + String(dist_traveled * sin(state_theata) * 100) + " cm");
-        //Serial.println("theata: " + String(state_theata) + " rad");
-        //Serial.println();
+
+        if (state_theata < (-2.0 * PI)) {
+            state_theata += (2.0 * PI);
+        } else if (state_theata > (2.0 * PI)) {
+            state_theata -= (2.0 * PI);
+        }
     }
 } // namespace encoder
