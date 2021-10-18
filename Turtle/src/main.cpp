@@ -1,4 +1,3 @@
-
 #include "Modules/Encoder.hpp"
 #include "Modules/Motor.hpp"
 #include "Modules/PID.hpp"
@@ -23,8 +22,7 @@ const uint8_t enc_right = 7;
 // Motor instances
 const motor::Motor wheel_left(3, 12);
 const motor::Motor wheel_right(11, 13);
-//uint32_t counter = 0;
-//pid::PidStruct *test_pid = &pid::left_pid;
+// uint32_t           counter = 0;
 
 void pid::regulator() {
     left_pid.input  = (encoder::distance_left * 100) / encoder::time_span;
@@ -36,11 +34,8 @@ void pid::regulator() {
     wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
     wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
 
-    //Serial.println(String(counter++) + "," + String(test_pid->setpoint) + "," + String(test_pid->input));
-    // Serial.println(String(right_pid.setpoint) + "," + String(right_pid.input) + "," + String(right_pid.output));
-    // Serial.println(String(left_pid.input) + "," + String(right_pid.input));
-    // Serial.println(String(left_pid.setpoint) + "," + String(right_pid.setpoint));
-    // Serial.println(String(left_pid.setpoint - right_pid.setpoint));
+    // Serial.println(String(counter++) + "," + String(left_pid.setpoint) + "," + String(left_pid.input) + "," +
+    //                String(right_pid.input));
 }
 
 bool is_bumper_pressed() {
@@ -76,10 +71,11 @@ bool is_bumper_pressed() {
 void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
     const double lin_vel = constrain(lin, 0.0, 255.0) / 255.0;
 
+    const double limit = 50.0;
     const double ang_vel =
         constrain((static_cast<double>(ang_p - ang_n) / 100.0) * (encoder::distance_between_wheel / 2.0), -1.0, 1.0);
-    double left  = constrain(((lin_vel - ang_vel) * 50.0), 0.0, 50.0);
-    double right = constrain(((lin_vel + ang_vel) * 50.0), 0.0, 50.0);
+    double left  = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
+    double right = constrain(((lin_vel + ang_vel) * limit), 0.0, limit);
 
     if (255 == ang_n) {
         left  = 15.0;
@@ -160,8 +156,8 @@ void setup() {
     pid::left_pid.pid.SetMode(AUTOMATIC);
     pid::right_pid.pid.SetMode(AUTOMATIC);
 
-    pid::left_pid.pid.SetOutputLimits(80, 255);
-    pid::right_pid.pid.SetOutputLimits(80, 255);
+    pid::left_pid.pid.SetOutputLimits(30, 255);
+    pid::right_pid.pid.SetOutputLimits(30, 255);
 
     pid::left_pid.pid.SetSampleTime(20);
     pid::right_pid.pid.SetSampleTime(20);
@@ -180,11 +176,21 @@ void loop() {
     is_bumper_pressed();
     delay(10);
 
-
-    // pid::set_setpoint(test_pid, 40);
-    // delay(2000);
-    // pid::set_setpoint(test_pid, 20);
-    // delay(2000);
-    // pid::set_setpoint(test_pid, 0);
-    // delay(2000);
+    /*
+    if (counter < 500) {
+        pid::set_setpoint(&pid::left_pid, 40);
+        pid::set_setpoint(&pid::right_pid, 40);
+        delay(2000);
+        pid::set_setpoint(&pid::left_pid, 20);
+        pid::set_setpoint(&pid::right_pid, 20);
+        delay(2000);
+        pid::set_setpoint(&pid::left_pid, 0);
+        pid::set_setpoint(&pid::right_pid, 0);
+        delay(2000);
+    } else {
+        pid::set_setpoint(&pid::left_pid, 0);
+        pid::set_setpoint(&pid::right_pid, 0);
+        delay(2000);
+    }
+    */
 }
