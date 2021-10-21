@@ -1,9 +1,10 @@
-from numpy.lib.function_base import average
-from Modules.cubic_spline_planner import calc_spline_course
-from Modules.lqr_control import *
+import Modules.cubic_spline_planner as csp
+import Modules.lqr_control as lqr
+import matplotlib.pyplot as plt
+import numpy as np
 
 def compute_traj(goal, ds=0.05):
-    cx, cy, cyaw = calc_spline_course([point[0] for point in goal], [
+    cx, cy, cyaw = csp.calc_spline_course([point[0] for point in goal], [
         point[1] for point in goal], ds)
     desired_traj = np.array([cx, cy, cyaw]).T
     return desired_traj
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     desired_traj = compute_traj(goal)
 
     # Calculate the trajectory
-    trajectory = closed_loop_prediction(desired_traj)
+    trajectory = lqr.closed_loop_prediction(desired_traj)
 
     # Display the trajectory that the mobile robot executed
     plt.close()

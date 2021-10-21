@@ -1,10 +1,4 @@
 """
-Cubic spline planner
- 
-Program: cubic_spine_planner.py
- 
-This program implements a cubic spline. For more information on 
-cubic splines, check out this link:
 https://mathworld.wolfram.com/CubicSpline.html
 """
 import math
@@ -78,21 +72,6 @@ class Spline:
         result = self.b[i] + 2.0 * self.c[i] * dx + 3.0 * self.d[i] * dx ** 2.0
         return result
  
-    def calcdd(self, t):
-        """
-        Calc second derivative
-        """
- 
-        if t < self.x[0]:
-            return None
-        elif t > self.x[-1]:
-            return None
- 
-        i = self.__search_index(t)
-        dx = t - self.x[i]
-        result = 2.0 * self.c[i] + 6.0 * self.d[i] * dx
-        return result
- 
     def __search_index(self, x):
         """
         search data segment index
@@ -157,25 +136,13 @@ class Spline2D:
  
         return x, y
  
-    def calc_curvature(self, s):
-        """
-        calc curvature
-        """
-        dx = self.sx.calcd(s)
-        ddx = self.sx.calcdd(s)
-        dy = self.sy.calcd(s)
-        ddy = self.sy.calcdd(s)
-        k = (ddy * dx - ddx * dy) / ((dx ** 2 + dy ** 2)**(3 / 2))
-        return k
- 
     def calc_yaw(self, s):
         """
         calc yaw
         """
         dx = self.sx.calcd(s)
         dy = self.sy.calcd(s)
-        yaw = math.atan2(dy, dx)
-        return yaw
+        return math.atan2(dy, dx)
  
  
 def calc_spline_course(x, y, ds=0.1):

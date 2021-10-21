@@ -21,155 +21,91 @@ import numpy as np
 import scipy.linalg as la
 
 
-class DifferentialDrive(object):
+def forward(x0, u, dt=0.1):
     """
-    Implementation of Differential Drive kinematics.
-    This represents a two-wheeled vehicle defined by the following states
-    state = [x,y,theta] where theta is the yaw angle
-    and accepts the following control inputs
-    input = [linear velocity of the car, angular velocity of the car]
+    Computes the forward kinematics for the system.
+
+    Input
+      :param x0: The starting state (position) of the system (units:[m,m,rad])
+              np.array with shape (3,) ->
+              (X, Y, THETA)
+      :param u:  The control input to the system
+              2x1 NumPy Array given the control input vector is
+              [linear velocity of the car, angular velocity of the car]
+              [meters per second, radians per second]
+      :param dt: Change in time (units: [s])
+
+    Output
+      :return: x1: The new state of the system (X, Y, THETA)
     """
+    # Control input
+    u_linvel = u[0]
+    u_angvel = u[1]
 
-    def __init__(self):
-        """
-        Initializes the class
-        """
-        # Covariance matrix representing action noise
-        # (i.e. noise on the control inputs)
-        self.V = None
+    # Velocity in the x and y direction in m/s
+    x_dot = u_linvel * np.cos(x0[2])
+    y_dot = u_linvel * np.sin(x0[2])
 
-    def get_state_size(self):
-        """
-        The state is (X, Y, THETA) in global coordinates, so the state size is 3.
-        """
-        return 3
+    # Calculate the new state of the system
+    return np.array([x0[0] + x_dot * dt,  # X
+                     x0[1] + y_dot * dt,  # Y
+                     x0[2] + u_angvel * dt])  # THETA
 
-    def get_input_size(self):
-        """
-        The control input is ([linear velocity of the car, angular velocity of the car]),
-        so the input size is 2.
-        """
-        return 2
 
-    def get_V(self):
-        """
-        This function provides the covariance matrix V which
-        describes the noise that can be applied to the forward kinematics.
+def linearize(angle, dt=0.1):
+    """
+    Creates a linearized version of the dynamics of the differential
+    drive robotic system (i.e. a
+    robotic car where each wheel is controlled separately.
 
-        Feel free to experiment with different levels of noise.
+    The system's forward kinematics are nonlinear due to the sines and
+    cosines, so we need to linearize
+    it by taking the Jacobian of the forward kinematics equations with respect
+     to the control inputs.
 
-        Output
-          :return: V: input cost matrix (3 x 3 matrix)
-        """
-        # The np.eye function returns a 2D array with ones on the diagonal
-        # and zeros elsewhere.
-        if self.V is None:
-            self.V = np.eye(3)
-            self.V[0, 0] = 0.01
-            self.V[1, 1] = 0.01
-            self.V[2, 2] = 0.1
-        return 1e-5*self.V
+    Our goal is to have a discrete time system of the following form:
+    x_t+1 = Ax_t + Bu_t where:
 
-    def forward(self, x0, u, dt=0.1):
-        """
-        Computes the forward kinematics for the system.
+    Input
+      :param x: The state of the system (units:[m,m,rad]) ->
+                np.array with shape (3,) ->
+                (X, Y, THETA) ->
+                X_system = [x1, x2, x3]
+      :param dt: The change in time from time step t to time step t+1
 
-        Input
-          :param x0: The starting state (position) of the system (units:[m,m,rad])
-                     np.array with shape (3,) ->
-                     (X, Y, THETA)
-          :param u:  The control input to the system
-                     2x1 NumPy Array given the control input vector is
-                     [linear velocity of the car, angular velocity of the car]
-                     [meters per second, radians per second]
-          :param dt: Change in time (units: [s])
+    Output
+      :return: A: Matrix A is a 3x3 matrix (because there are 3 states) that
+                  describes how the state of the system changes from t to t+1
+                  when no control command is executed. Typically,
+                  a robotic car only drives when the wheels are turning.
+                  Therefore, in this case, A is the identity matrix.
+      :return: B: Matrix B is a 3 x 2 matrix (because there are 3 states and
+                  2 control inputs) that describes how
+                  the state (X, Y, and THETA) changes from t to t + 1 due to
+                  the control command u.
+                  Matrix B is found by taking the The Jacobian of the three
+                  forward kinematics equations (for X, Y, THETA)
+                  with respect to u (3 x 2 matrix)
+    """
+    ####### A Matrix #######
+    # A matrix is the identity matrix
+    A = np.array([[1.0,   0,  0],
+                  [0, 1.0,  0],
+                  [0,   0, 1.0]])
 
-        Output
-          :return: x1: The new state of the system (X, Y, THETA)
-        """
-        u0 = u
+    ####### B Matrix #######
+    B = np.array([[np.cos(angle)*dt, 0],
+                  [np.sin(angle)*dt, 0],
+                  [0, dt]])
 
-        # Starting state of the vehicle
-        X = x0[0]
-        Y = x0[1]
-        THETA = x0[2]
-
-        # Control input
-        u_linvel = u0[0]
-        u_angvel = u0[1]
-
-        # Velocity in the x and y direction in m/s
-        x_dot = u_linvel * np.cos(THETA)
-        y_dot = u_linvel * np.sin(THETA)
-
-        # The new state of the system
-        x1 = np.empty(3)
-
-        # Calculate the new state of the system
-        # Noise is added like in slide 34 in Lecture 7
-        x1[0] = x0[0] + x_dot * dt  # X
-        x1[1] = x0[1] + y_dot * dt  # Y
-        x1[2] = x0[2] + u_angvel * dt  # THETA
-
-        return x1
-
-    def linearize(self, x, dt=0.1):
-        """
-        Creates a linearized version of the dynamics of the differential
-        drive robotic system (i.e. a
-        robotic car where each wheel is controlled separately.
-
-        The system's forward kinematics are nonlinear due to the sines and
-        cosines, so we need to linearize
-        it by taking the Jacobian of the forward kinematics equations with respect
-         to the control inputs.
-
-        Our goal is to have a discrete time system of the following form:
-        x_t+1 = Ax_t + Bu_t where:
-
-        Input
-          :param x: The state of the system (units:[m,m,rad]) ->
-                    np.array with shape (3,) ->
-                    (X, Y, THETA) ->
-                    X_system = [x1, x2, x3]
-          :param dt: The change in time from time step t to time step t+1
-
-        Output
-          :return: A: Matrix A is a 3x3 matrix (because there are 3 states) that
-                      describes how the state of the system changes from t to t+1
-                      when no control command is executed. Typically,
-                      a robotic car only drives when the wheels are turning.
-                      Therefore, in this case, A is the identity matrix.
-          :return: B: Matrix B is a 3 x 2 matrix (because there are 3 states and
-                      2 control inputs) that describes how
-                      the state (X, Y, and THETA) changes from t to t + 1 due to
-                      the control command u.
-                      Matrix B is found by taking the The Jacobian of the three
-                      forward kinematics equations (for X, Y, THETA)
-                      with respect to u (3 x 2 matrix)
-
-        """
-        THETA = x[2]
-
-        ####### A Matrix #######
-        # A matrix is the identity matrix
-        A = np.array([[1.0,   0,  0],
-                      [0, 1.0,  0],
-                      [0,   0, 1.0]])
-
-        ####### B Matrix #######
-        B = np.array([[np.cos(THETA)*dt, 0],
-                      [np.sin(THETA)*dt, 0],
-                      [0, dt]])
-
-        return A, B
+    return A, B
 
 
 def pi_2_pi(angle):
     return (angle + np.pi) % (2*np.pi) - np.pi
 
 
-def dLQR(F, Q, R, x, xf, dt=0.1):
+def dLQR(Q, R, x, xf, dt=0.1):
     """
     Discrete-time linear quadratic regulator for a non-linear system.
 
@@ -194,6 +130,8 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
       :return: u_t_star: Optimal action u for the current state
                    [linear velocity of the car, angular velocity of the car]
                    [meters per second, radians per second]
+
+    __matmul__: np.matmul(A, B) = A @ B
     """
     # We want the system to stabilize at xf,
     # so we let x - xf be the state.
@@ -204,7 +142,7 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
     x_error = [x_error[0], x_error[1], pi_2_pi(x_error[2])]
 
     # Calculate the A and B matrices
-    A, B = F.linearize(x, dt)
+    A, B = linearize(x[2], dt)
 
     # Solutions to discrete LQR problems are obtained using dynamic
     # programming.
@@ -223,7 +161,6 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
 
     # 2. For t = N, ..., 1
     for t in range(N, 0, -1):
-
         # Discrete-time Algebraic Riccati equation to calculate the optimal
         # state cost matrix
         P[t-1] = Q + A.T @ P[t] @ A - (A.T @ P[t] @ B) @ la.pinv(
@@ -235,12 +172,10 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
 
     # 3 and 4. For t = 0, ..., N - 1
     for t in range(N):
-
         # Calculate the optimal feedback gain K_t
         K[t] = -la.pinv(R + B.T @ P[t+1] @ B) @ B.T @ P[t+1] @ A
 
     for t in range(N):
-
         # Calculate the optimal control input
         u[t] = K[t] @ x_error
 
@@ -249,58 +184,3 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
 
     # Return the optimal control inputs
     return u_t_star
-
-
-def get_R():
-    """
-    This function provides the R matrix to the lqr_control simulator.
-
-    Returns the input cost matrix R.
-
-    Experiment with different gains.
-    This matrix penalizes actuator effort 
-    (i.e. rotation of the motors on the wheels).
-    The R matrix has the same number of rows as are actuator states 
-    [linear velocity of the car, angular velocity of the car]
-    [meters per second, radians per second]
-    This matrix often has positive values along the diagonal.
-    We can target actuator states where we want low actuator 
-    effort by making the corresponding value of R large.   
-
-    Output
-      :return: R: Input cost matrix
-    """
-    R = np.array([[0.01, 0],  # Penalization for linear velocity effort
-                  [0, 0.02]])  # Penalization for angular velocity effort
-
-    return R
-
-
-def get_Q():
-    """
-    This function provides the Q matrix to the lqr_control simulator.
-
-    Returns the state cost matrix Q.
-
-    Experiment with different gains to see their effect on the vehicle's 
-    behavior.
-    Q helps us weight the relative importance of each state in the state 
-    vector (X, Y, THETA). 
-    Q is a square matrix that has the same number of rows as there are states.
-    Q penalizes bad performance.
-    Q has positive values along the diagonal and zeros elsewhere.
-    Q enables us to target states where we want low error by making the 
-    corresponding value of Q large.
-    We can start with the identity matrix and tweak the values through trial 
-    and error.
-
-    Output
-      :return: Q: State cost matrix (3x3 matrix because the state vector is 
-                  (X, Y, THETA))
-    """
-    Q = np.array([[0.4, 0, 0],  # Penalize X position error (global coordinates)
-                  # Penalize Y position error (global coordinates)
-                  [0, 0.4, 0],
-                  [0, 0, 0.85]])  # Penalize heading error (global coordinates)
-
-    return Q

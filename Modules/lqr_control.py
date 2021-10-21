@@ -1,17 +1,65 @@
-"""
-A robot will follow a racetrack using an LQR controller to estimate 
-the state (i.e. x position, y position, yaw angle) at each timestep
-"""
-
 # Import important libraries
 import numpy as np
 import matplotlib.pyplot as plt
-from Modules.kinematics import *
+import Modules.kinematics as kin
 import struct
 import math
 
 show_animation = True
 
+def get_R():
+    """
+    This function provides the R matrix to the lqr_control simulator.
+
+    Returns the input cost matrix R.
+
+    Experiment with different gains.
+    This matrix penalizes actuator effort 
+    (i.e. rotation of the motors on the wheels).
+    The R matrix has the same number of rows as are actuator states 
+    [linear velocity of the car, angular velocity of the car]
+    [meters per second, radians per second]
+    This matrix often has positive values along the diagonal.
+    We can target actuator states where we want low actuator 
+    effort by making the corresponding value of R large.   
+
+    Output
+      :return: R: Input cost matrix
+    """
+    R = np.array([[0.01, 0],  # Penalization for linear velocity effort
+                  [0, 0.02]])  # Penalization for angular velocity effort
+
+    return R
+
+
+def get_Q():
+    """
+    This function provides the Q matrix to the lqr_control simulator.
+
+    Returns the state cost matrix Q.
+
+    Experiment with different gains to see their effect on the vehicle's 
+    behavior.
+    Q helps us weight the relative importance of each state in the state 
+    vector (X, Y, THETA). 
+    Q is a square matrix that has the same number of rows as there are states.
+    Q penalizes bad performance.
+    Q has positive values along the diagonal and zeros elsewhere.
+    Q enables us to target states where we want low error by making the 
+    corresponding value of Q large.
+    We can start with the identity matrix and tweak the values through trial 
+    and error.
+
+    Output
+      :return: Q: State cost matrix (3x3 matrix because the state vector is 
+                  (X, Y, THETA))
+    """
+    Q = np.array([[0.4, 0, 0],  # Penalize X position error (global coordinates)
+                  # Penalize Y position error (global coordinates)
+                  [0, 0.4, 0],
+                  [0, 0, 0.85]])  # Penalize heading error (global coordinates)
+
+    return Q
 
 def validate(value, limit_lower, limit_upper):
     result = value
@@ -44,12 +92,6 @@ def closed_loop_prediction(desired_traj):
     Q = get_Q()  # Defined in kinematics.py
     R = get_R()  # Defined in kinematics.py
 
-    # Initialize the Car and the Car's landmark sensor
-    DiffDrive = DifferentialDrive()
-
-    # Process noise and sensor measurement noise
-    V = DiffDrive.get_V()
-
     # Create objects for storing states and estimated state
     trajectory = np.array([state])
 
@@ -57,7 +99,7 @@ def closed_loop_prediction(desired_traj):
     index = 1
     while (index < len(desired_traj)):
         # Generate optimal control commands
-        u_lqr = dLQR(DiffDrive, Q, R, state, desired_traj[index, 0:3], dt)
+        u_lqr = kin.dLQR(Q, R, state, desired_traj[index, 0:3], dt)
 
         if (index < (len(desired_traj) - 1)):
             factor = VELOCITY / (abs(u_lqr[0]) + abs(u_lqr[1]))
@@ -65,7 +107,7 @@ def closed_loop_prediction(desired_traj):
 
         # Add sensors and update position
         # Move forwad in time
-        state = DiffDrive.forward(state, u_lqr, dt)
+        state = kin.forward(state, u_lqr, dt)
 
         # Store the trajectory and estimated trajectory
         trajectory = np.concatenate((trajectory, [state]), axis=0)
