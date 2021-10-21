@@ -38,5 +38,5 @@ if __name__ == '__main__':
     plt.ylim(0.0, 3.25)
     plt.legend()
     plt.gca().set_position([0, 0, 1, 1])
-    plt.savefig("Simulation_result.svg")
+    #plt.savefig("Simulation_result.svg")
     plt.show()
