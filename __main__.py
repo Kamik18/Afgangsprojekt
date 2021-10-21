@@ -1,29 +1,38 @@
-from Modules.utils import compute_traj
+from numpy.lib.function_base import average
+from Modules.cubic_spline_planner import calc_spline_course
 from Modules.lqr_control import *
-import subprocess
-import time
+
+def compute_traj(goal, ds=0.05):
+    cx, cy, cyaw = calc_spline_course([point[0] for point in goal], [
+        point[1] for point in goal], ds)
+    desired_traj = np.array([cx, cy, cyaw]).T
+    return desired_traj
+
 
 if __name__ == '__main__':
     print("LQR steering control tracking start")
- 
+
     # Create the track waypoints
-    ax = [0, 0.1, 5]
-    ay = [1, 1 , 0]
-    
+    goal = [(0.1, 0.0), (0.5, 0.5), (0.5, 0.0), (1, -0.25), (1, -0.5), (1, -1.0), (1, -1.5), (2.0, -1.5), (2.0, -1.0), (1.5, -0.25), (1.0, 0.0), (1.5, 0.5), (1.0, -3.0), (0.1, 0.0)]
+    #goal = [(-0.46513,0.35679), (0.59425,-0.97643), (1.4197,-2.0270), (1.8817,-2.5629), (2.0452,-2.8709), (2.0870,-3.2699), (1.9730,-3.8209), (1.6415,-4.0042), (1.2349,-3.9303), (0.82839,-3.3759), (0.39971,-2.7303), (0.21730,-2.5175), (-0.098121,-2.3769), (-0.33578,-2.3781), (-0.61875,-2.3313), (-0.86577,-2.0956), (-1.1231,-1.2647), (-1.3482,-0.94632), (-1.7189,-0.81352), (-2.3010,-0.79200), (-2.6260,-0.61389), (-2.7697,-0.28561), (-2.7230,0.065077), (-2.5380,0.60048), (-2.5855,1.1703), (-2.9417,1.5898), (-3.5929,1.8471), (-4.2397,1.8510), (-4.6592,1.6769), (-4.9757,1.4157), (-5.4981,0.75086), (-5.7355,0.45801), (-5.9572,0.14934), (-6.1069,-0.049767), (-6.3482,-0.32372), (-6.7200,-0.45417), (-7.0549,-0.42550), (-7.4000,-0.20000), (-7.5547,0.15700), (-7.6483,0.62134), (-7.7144,0.89779), (-7.9564,2.0064), (-8.0136,2.4511), (-7.9236,2.9122), (-7.7491,3.2986), (-7.6803,3.5675), (-7.7647,3.6973), (-7.9690,3.7038), (-8.1102,3.5153), (-8.2610,3.2301), (-8.4794,2.8331), (-8.5746,2.6677), (-8.7619,2.3992), (-9.0691,2.1343), (-9.5000,2.0000), (-10.365,1.9985), (-11.064,2.1411), (-11.600,2.4000), (-12.135,2.8773), (-12.451,3.4131), (-12.778,4.1231), (-13.106,4.6627), (-13.653,4.7236), (-14.020,4.6137), (-14.339,4.2873), (-14.273,3.8136), (-14.000,3.5000), (-13.245,2.9082), (-12.633,2.5246), (-11.534,1.9878), (-10.826,1.7454), (-9.3209,1.2141), (-7.6483,0.62134), (-7.2353,0.52529), (-6.8106,0.51402), (-6.3108,0.75829), (-5.7702,1.2766), (-5.3318,1.7235), (-4.8617,2.1803), (-4.4937,2.4673), (-4.1108,2.6530), (-4.0682,2.5530), (-3.9597,2.3689), (-3.7248,2.4554), (-3.4000,2.6000), (-2.8462,2.6548), (-2.4586,2.5004), (-2.0419,2.1897), (-1.1372,1.1177), (-0.46513,0.35679)]
+
     # Compute the desired trajectory
-    desired_traj = compute_traj(ax,ay)
- 
+    desired_traj = compute_traj(goal)
+
+    # Calculate the trajectory
     trajectory = closed_loop_prediction(desired_traj)
- 
+
     # Display the trajectory that the mobile robot executed
     plt.close()
     flg, _ = plt.subplots(1)
-    plt.plot(desired_traj[:,0], desired_traj[:,1], ".r", label="Trajectory")
-    plt.plot(trajectory[:,0], trajectory[:,1], "-g", label="Tracking")
+    plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [exit(0) if event.key == 'escape' else None])
+    plt.plot(desired_traj[:, 0], desired_traj[:, 1], ".b", label="Trajectory")
+    plt.plot(trajectory[:, 0], trajectory[:, 1], "-g", label="Tracking")
+    plt.plot([point[0] for point in goal], [point[1]
+             for point in goal], "xr", label="Goals")
     plt.grid(True)
     plt.axis("equal")
     plt.xlabel("x[m]")
     plt.ylabel("y[m]")
     plt.legend()
     plt.show()
-    
