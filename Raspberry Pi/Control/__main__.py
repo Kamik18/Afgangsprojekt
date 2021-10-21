@@ -1,4 +1,4 @@
-from Modules.utils import compute_traj
+from Modules.utils import compute_traj, calc_nearest_index
 from Modules.lqr_control import *
 from Modules import hokuyo
 from Modules import serial_port
@@ -21,21 +21,15 @@ import subprocess
 # Gloabl variable
 robot_poses = []
 laser_data = []
+desired_traj = []
 theta_multiplier = 1.12
 
 global_lines = []
 global_points = []
 
 # Create the track waypoints
-goal = [(0.0, 0.0), (0.0, 0.25), (0.0, 0.5)
-        (0.0, 0.5), (0.25, 0.5), (0.5, 0.5), (0.75, 0.5),
-        (1.0, 0.5), (1.25, 0.5), (1.5, 0.5), (1.75, 0.5),
-        (2.0, 0.5), (2.25, 0.5), (2.5, 0.5), (2.75, 0.5),
-        (3.0, 0.5), (3.25, 0.5), (3.5, 0.5), (3.75, 0.5),
-        (4.0, 0.5), (4.25, 0.5), (4.5, 0.5), (4.75, 0.5),
-        (5.0, 0.5)]
-ax = []
-ay = []
+goal = [(0.0, 0.0), (0.5, 0.0), (1, -0.25), (1, -0.5), (1, -1.0), (1, -1.5), (2.0, -1.5), (2.0, -1.0), (1.5, -0.25), (1.0, 0.0), (1.5, 0.5), (1.0, -10.0)]
+
 trajectory = []
 
 # UART - Lidar communication
@@ -151,31 +145,14 @@ def reset_encoder():
     time.sleep(2)
 
 
+last_completed = (0,0)
 def goodbye():
     # Stop the PIDs
     bus.write_i2c_block_data(address, 0, [0, 0, 0])
 
-    # Append goal point
-    ax.append(goal[0])
-    ay.append(goal[1])
-
-    # Compute the desired trajectory
-    desired_traj = compute_traj(ax, ay)
-
-    # Display the trajectory that the mobile robot executed
-    plt.close()
-    flg, _ = plt.subplots(1)
-    plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Desired")
-    for i in range(len(trajectory)):
-        plt.plot(trajectory[i][:, 0], trajectory[i][:, 1], "-g")
-    plt.grid(True)
-    plt.axis("equal")
-    plt.xlabel("x[m]")
-    plt.ylabel("y[m]")
-    plt.legend()
-    plt.show()
-
-    # Print traveled distance
+    time.sleep(1)
+    
+    # Print final position
     data = bus.read_i2c_block_data(address, 0, 25)
     x = struct.unpack('d', bytearray(data[1:9]))[0]
     y = struct.unpack('d', bytearray(data[9:17]))[0]
@@ -183,59 +160,122 @@ def goodbye():
     print("x: ", x)
     print("y: ", y)
     print("angle: ", angle)
-
+    
+    # Display the trajectory that the mobile robot executed
+    plt.close()
+    flg, _ = plt.subplots(1)
+    plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Desired")
+    for i in range(len(trajectory)):
+        plt.plot(trajectory[i][:, 0], trajectory[i][:, 1], "-g")
+    plt.plot(last_completed[0], last_completed[1], "xg")
+    plt.plot(x, y, "xr")
+    plt.grid(True)
+    plt.axis("equal")
+    plt.xlabel("x[m]")
+    plt.ylabel("y[m]")
+    plt.legend()
+    plt.show()
+    
+    '''
+    print("laser_data")
+    print(laser_data)
+    print("robot_poses")
+    print(robot_poses)
+    
     # Create a map
     create_map()
 
-    print('get_version_info')
-    print(laser.get_version_info())
-    print('get_sensor_specs')
-    print(laser.get_sensor_specs())
-    print('reset')
-    print(laser.reset())
-    print('laser_off')
-    print(laser.laser_off())
-    print('Complete')
+    laser.laser_off()
+    '''
+    
+    print('Completed')
     exit(0)
 
-
-atexit.register(goodbye)
 
 if __name__ == '__main__':
     print("LQR steering control tracking start")
 
+    # Reset the encoders
+    reset_encoder()
+   
+    # Create target
+    ax = []
+    ay = []
+    for target in goal:
+        ax.append(target[0])
+        ay.append(target[1])
+        
+    # Compute the desired trajectory
+    desired_traj = compute_traj(ax, ay)
+    
+    '''
+    # Display the trajectory that the mobile robot executed
+    plt.close()
+    flg, _ = plt.subplots(1)
+    plt.gcf().canvas.mpl_connect(
+        'key_release_event',
+        lambda event: [exit(0) if event.key == 'escape' else None])
+    plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Desired")
+    plt.grid(True)
+    plt.axis("equal")
+    plt.xlabel("x[m]")
+    plt.ylabel("y[m]")
+    plt.legend()
+    plt.title("desired trajectory")
+    plt.show()
+    '''
+    
+    atexit.register(goodbye)
+    
     # Starting the laser
+    '''
     laser_serial = serial.Serial(
         port=uart_port, baudrate=uart_speed, timeout=0.5)
     port = serial_port.SerialPort(laser_serial)
 
     laser = hokuyo.Hokuyo(port)
 
-    print('laser_on')
-    print(laser.laser_on())
-    print(laser.set_high_sensitive(True))
-    print(laser.set_motor_speed())
-
-    # Reset the encoders
-    reset_encoder()
+    print("Starting lidar")
+    laser.laser_on()
+    laser.set_high_sensitive(True)
+    laser.set_motor_speed()
 
     # Append data from sensor
     laser_data.append(laser.get_single_scan())
+    '''
     # Append robot position
-    robot_poses.append([0.0, 0.0, 0.0])
-
-    for target in goal:
-        pos, delta_trajectory = closed_loop_prediction(target)
+    pos = (0.0, 0.0, 0.0)
+    offset = (0.0, 0.0, 0.0)
+    robot_poses.append(pos)
+        
+    print("Controller started")
+    
+    # counter = 0
+    succes = True
+    #for target in desired_traj:
+    for i in range(0, len(desired_traj)):
+        if (i < (len(desired_traj) - 1)):    
+            pos, delta_trajectory, succes = closed_loop_prediction(desired_traj[i], desired_traj[i + 1], pos, offset)
+        else:
+            pos, delta_trajectory, succes = closed_loop_prediction(desired_traj[i], desired_traj[i], pos, offset)                
         trajectory.append(delta_trajectory)
-        ax.append(target[0])
-        ay.append(target[1])
+        last_completed = target    
 
-        # Update robot position
-        robot_pos = (pos[0] * 1000, pos[1] * 1000, pos[2])
-        # Append data from sensor
-        laser_data.append(laser.get_single_scan())
-        # Append robot position
-        robot_poses.append(robot_pos)
-
+        print("Offset: ", desired_traj[i][0:3] - pos)
+        
+        if (succes == False):
+            i += 2
+            
+        '''
+        counter += 1        
+        if (counter % 5 == 0):
+            # Append data from sensor
+            laser_data.append(laser.get_single_scan())
+            # Update robot position
+            robot_pos = (pos[0] * 1000, pos[1] * 1000, pos[2])
+            # Append robot position
+            robot_poses.append(robot_pos)
+        '''
+    
     # Stop the PIDs
     bus.write_i2c_block_data(address, 0, [0, 0, 0])

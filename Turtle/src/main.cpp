@@ -71,7 +71,7 @@ bool is_bumper_pressed() {
 void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
     const double lin_vel = constrain(lin, 0.0, 255.0) / 255.0;
 
-    const double limit = 50.0;
+    const double limit = 40.0;
     const double ang_vel =
         constrain((static_cast<double>(ang_p - ang_n) / 100.0) * (encoder::distance_between_wheel / 2.0), -1.0, 1.0);
     double left  = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
