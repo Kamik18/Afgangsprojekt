@@ -181,6 +181,7 @@ def dLQR(Q, R, x, xf, dt=0.1):
 
     # Optimal control input is u_t_star
     u_t_star = u[N-1]
+    u_t_star[0] = abs(u_t_star[0])
 
     # Return the optimal control inputs
     return u_t_star
