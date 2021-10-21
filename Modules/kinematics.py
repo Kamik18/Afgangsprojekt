@@ -264,7 +264,7 @@ def get_R():
       :return: R: Input cost matrix
     """
     R = np.array([[0.01, 0],  # Penalization for linear velocity effort
-                  [0, 0.01]])  # Penalization for angular velocity effort
+                  [0, 0.02]])  # Penalization for angular velocity effort
 
     return R
 
@@ -294,6 +294,6 @@ def get_Q():
     Q = np.array([[0.4, 0, 0],  # Penalize X position error (global coordinates)
                   # Penalize Y position error (global coordinates)
                   [0, 0.4, 0],
-                  [0, 0, 0.4]])  # Penalize heading error (global coordinates)
+                  [0, 0, 0.85]])  # Penalize heading error (global coordinates)
 
     return Q

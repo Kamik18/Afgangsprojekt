@@ -7,22 +7,22 @@ the state (i.e. x position, y position, yaw angle) at each timestep
 import numpy as np
 import matplotlib.pyplot as plt
 from Modules.kinematics import *
-import smbus
 import struct
+import math
 
-show_animation = False
+show_animation = True
 
-bus = smbus.SMBus(1)
-address = 25
+
+def dist_points(point1, point2):
+    return np.linalg.norm(point1 - point2)
 
 
 def closed_loop_prediction(desired_traj):
     # Simulation Parameters
     T = desired_traj.shape[0]  # Maximum simulation time
     goal_dis = 0.01  # How close we need to get to the goal
-    goal = desired_traj[-1, :]  # Coordinates of the goal
-    dt = 0.1  # Timestep interval
-    time = 0.0  # Starting time
+    dist_threshold = 0.10
+    dt = 1 / 20  # Timestep interval
 
     # Initial States
     # Initial state of the car
@@ -39,65 +39,50 @@ def closed_loop_prediction(desired_traj):
     V = DiffDrive.get_V()
 
     # Create objects for storing states and estimated state
-    t = [time]
-    traj = np.array([state])
+    trajectory = np.array([state])
 
-    ind = 0
-    while T >= time:
-        # Point to track
-        ind = int(np.floor(time))
-
-        goal_i = desired_traj[ind, :]
-
+    prev_distance = np.inf
+    index = 1
+    while (index < (len(desired_traj) - 1)):
         # Generate optimal control commands
-        u_lqr = dLQR(DiffDrive, Q, R, state, goal_i[0:3], dt)
-
-        # Set motor speed
-        input = [int(np.uint8(u_lqr[0] * 1000)),
-                 int(np.uint8(u_lqr[1] * 10000 + 128))]
-        bus.write_i2c_block_data(address, 0, input)
+        u_lqr = dLQR(DiffDrive, Q, R, state, desired_traj[index, 0:3], dt)
 
         # Add sensors and update position
         # Move forwad in time
         state = DiffDrive.forward(state, u_lqr, dt)
-        data = bus.read_i2c_block_data(address, 0, 25)
-        print("x: ", struct.unpack('d', bytearray(data[1:9]))[0])
-        print("y: ", struct.unpack('d', bytearray(data[9:17]))[0])
-        print("angle: ", struct.unpack('d', bytearray(data[17:]))[0])
-        if (data[0] == 1):
-            print("bumper pressed")
-            bus.write_i2c_block_data(address, 0, [0, 0])
-            return t, traj
-        
 
         # Store the trajectory and estimated trajectory
-        t.append(time)
-        traj = np.concatenate((traj, [state]), axis=0)
+        trajectory = np.concatenate((trajectory, [state]), axis=0)
 
         # Check to see if the robot reached goal
-        if np.linalg.norm(state[0:2]-goal[0:2]) <= goal_dis:
+        if dist_points(state[0:2], desired_traj[-1, 0:2]) <= goal_dis:
             print("Goal reached")
             break
 
-        #if np.linalg.norm(state[0:2]-goal_i[0:2]) <= 0.1:
-        #    # Increment time
-        #    time = time + dt
-        time = time + dt
-        '''
+        distance_target = dist_points(state[0:2], desired_traj[index, 0:2])
+        distance_target_next = dist_points(
+            state[0:2], desired_traj[index + 1, 0:2])
+        if ((distance_target < dist_threshold) or
+            (distance_target >= prev_distance) or
+                (distance_target > distance_target_next)):
+            index += 1
+            prev_distance = distance_target_next
+        else:
+            prev_distance = distance_target
+
         # Plot the vehicles trajectory
-        if time % 1 < 0.1 and show_animation:
+        if show_animation:
             plt.cla()
             plt.plot(desired_traj[:, 0],
-                     desired_traj[:, 1], "-r", label="course")
-            plt.plot(traj[:, 0], traj[:, 1], "ob", label="trajectory")
+                     desired_traj[:, 1], ".r", label="course")
+            plt.plot(trajectory[:, 0], trajectory[:, 1],
+                     "-b", label="trajectory")
+            plt.plot(desired_traj[index, 0],
+                     desired_traj[index, 1], "xb", label="target")
             plt.legend()
             plt.axis("equal")
             plt.grid(True)
-            plt.title("speed[m/s]:" + str(round(np.mean(u_lqr), 2)) +
-                      ",target index:" + str(ind))
             plt.pause(0.0001)
-        '''
-    
-    bus.write_i2c_block_data(address, 0, [0, 0])
 
-    return t, traj
+    # Return the trajectory
+    return trajectory
