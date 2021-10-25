@@ -69,21 +69,12 @@ bool is_bumper_pressed() {
 // @param lin The linear velocity.
 // @param ang The angular velocity.
 void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
-    const double lin_vel = constrain(lin, 0.0, 255.0) / 255.0;
+    const double lin_vel = lin / 255.0;
 
-    const double limit = 40.0;
-    const double ang_vel =
-        constrain((static_cast<double>(ang_p - ang_n) / 100.0) * (encoder::distance_between_wheel / 2.0), -1.0, 1.0);
-    double left  = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
-    double right = constrain(((lin_vel + ang_vel) * limit), 0.0, limit);
-
-    if (255 == ang_n) {
-        left  = 15.0;
-        right = 0.0;
-    } else if (255 == ang_p) {
-        left  = 0.0;
-        right = 15.0;
-    }
+    const double limit   = 40.0;
+    const double ang_vel = (static_cast<double>(ang_p - ang_n) / 255.0) * (encoder::distance_between_wheel / 2.0);
+    double       left    = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
+    double       right   = constrain(((lin_vel + ang_vel) * limit), 0.0, limit);
 
     pid::set_setpoint(&pid::left_pid, (left == 0) ? 0 : (left + pid::left_pid.setpoint) / 2.0);
     pid::set_setpoint(&pid::right_pid, (right == 0) ? 0 : (right + pid::right_pid.setpoint) / 2.0);
@@ -156,8 +147,8 @@ void setup() {
     pid::left_pid.pid.SetMode(AUTOMATIC);
     pid::right_pid.pid.SetMode(AUTOMATIC);
 
-    pid::left_pid.pid.SetOutputLimits(30, 255);
-    pid::right_pid.pid.SetOutputLimits(30, 255);
+    pid::left_pid.pid.SetOutputLimits(20, 255);
+    pid::right_pid.pid.SetOutputLimits(20, 255);
 
     pid::left_pid.pid.SetSampleTime(20);
     pid::right_pid.pid.SetSampleTime(20);
