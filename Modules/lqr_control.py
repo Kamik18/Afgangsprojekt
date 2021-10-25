@@ -2,8 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import Modules.kinematics as kin
-import struct
-import math
+from Modules.Turtle import turtle
 
 show_animation = False
 
@@ -86,10 +85,14 @@ def closed_loop_prediction(desired_traj):
     dt = 1 / 20  # Timestep interval
     VELOCITY = 0.8
 
+    OFFSET = np.array([desired_traj[0][0], desired_traj[0][1], -desired_traj[0][2]]) 
+
     # Initial States
     # Initial state of the car
-    state = np.array(
-        [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
+    # state = np.array(
+    #     [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
+    state, _ = turtle.get_pos()
+    print("Start: ", desired_traj[0])
     print("Initial state ", state)
 
     # Get the Cost-to-go and input cost matrices for LQR
@@ -111,7 +114,13 @@ def closed_loop_prediction(desired_traj):
 
         # Add sensors and update position
         # Move forwad in time
-        state = kin.forward(state, u_lqr, dt)
+        #state = kin.forward(state, u_lqr, dt)
+        turtle.set_velocity(u_lqr[0], u_lqr[1])
+        state, bumper = turtle.get_pos()
+
+        if (bumper == 1):
+            print("Bumper pressed")
+            break
 
         # Store the trajectory and estimated trajectory
         trajectory = np.concatenate((trajectory, [state]), axis=0)
