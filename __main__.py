@@ -36,7 +36,8 @@ if __name__ == '__main__':
     # goal = [(0.0, 0.0), (0.1, 0.0), (0.2, 0.0), (1.5, 0.0), (2.0, 0.0), (2.5, 1.0), (0.5, 2.0), (0.0, 4.0), (1.0, 4.0), (2.0, 2.0), (0.0, 0.0)]
     
     # Scale the map
-    goal = [(pos[0] * 2, pos[1] * 2) for pos in goal]
+    factor = 4
+    goal = [(pos[0] * factor, pos[1] * factor) for pos in goal]
 
     # Compute the desired trajectory
     desired_traj = compute_traj(goal)
