@@ -77,7 +77,7 @@ def dist_points(point1, point2):
     return np.linalg.norm(point1 - point2)
 
 
-def closed_loop_prediction(desired_traj):
+def closed_loop_prediction(desired_traj, simulation=False):
     # Simulation Parameters
     T = desired_traj.shape[0]  # Maximum simulation time
     goal_dis = 0.01  # How close we need to get to the goal
@@ -85,15 +85,16 @@ def closed_loop_prediction(desired_traj):
     dt = 1 / 20  # Timestep interval
     VELOCITY = 0.8
 
-    OFFSET = np.array([desired_traj[0][0], desired_traj[0][1], -desired_traj[0][2]]) 
-
     # Initial States
     # Initial state of the car
-    # state = np.array(
-    #     [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
-    state, _ = turtle.get_pos()
-    print("Start: ", desired_traj[0])
-    print("Initial state ", state)
+    state = np.array([0, 0, 0])
+    if (simulation):
+        state = np.array(
+            [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
+    else:
+        state, _ = turtle.get_pos()
+        print("Start: ", desired_traj[0])
+        print("Initial state ", state)
 
     # Get the Cost-to-go and input cost matrices for LQR
     Q = get_Q()  # Defined in kinematics.py
@@ -114,13 +115,15 @@ def closed_loop_prediction(desired_traj):
 
         # Add sensors and update position
         # Move forwad in time
-        #state = kin.forward(state, u_lqr, dt)
-        turtle.set_velocity(u_lqr[0], u_lqr[1])
-        state, bumper = turtle.get_pos()
+        if (simulation):
+            state = kin.forward(state, u_lqr, dt)
+        else:
+            turtle.set_velocity(u_lqr[0], u_lqr[1])
+            state, bumper = turtle.get_pos()
 
-        if (bumper == 1):
-            print("Bumper pressed")
-            break
+            if (bumper == 1):
+                print("Bumper pressed")
+                break
 
         # Store the trajectory and estimated trajectory
         trajectory = np.concatenate((trajectory, [state]), axis=0)
@@ -148,7 +151,7 @@ def closed_loop_prediction(desired_traj):
             print("Completed run, offset: ", dist_points(
                 state[0:2], desired_traj[-1, 0:2]))
             break
-        
+
         # Update the distance error
         else:
             prev_distance = distance_target
