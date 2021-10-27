@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # goal = [(0.0, 0.0), (0.1, 0.0), (0.2, 0.0), (1.5, 0.0), (2.0, 0.0), (2.5, 1.0), (0.5, 2.0), (0.0, 4.0), (1.0, 4.0), (2.0, 2.0), (0.0, 0.0)]
 
     # Scale the map
-    factor = 4
+    factor = 1
     goal = [(pos[0] * factor, pos[1] * factor) for pos in goal]
 
     # Compute the desired trajectory
@@ -48,8 +48,11 @@ if __name__ == '__main__':
     # Reset the encoders
     reset_encoder()
 
+    start = time.time()
     # Calculate the trajectory
     trajectory = lqr.closed_loop_prediction(desired_traj)
+    end = time.time()
+    print("Elapsed time: ", round(end - start, 2))
 
     # Stop the turtle
     turtle.set_velocity(0, 0)

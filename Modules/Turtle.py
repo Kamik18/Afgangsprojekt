@@ -23,9 +23,9 @@ class Turtle:
         cmd = [0, 0, 0]
         cmd[0] = int(abs(lin) * 255)
         if (ang > 0):
-            cmd[1] = int(abs(ang) * 255)
+            cmd[1] = int(ang * 255)
         else:
-            cmd[2] = int(abs(ang) * 255)
+            cmd[2] = int(-ang * 255)
         self.bus.write_i2c_block_data(self.address, 0, cmd)
 
 turtle = Turtle()
