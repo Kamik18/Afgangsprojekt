@@ -34,9 +34,8 @@ void pid::regulator() {
     wheel_left.runPWM(left_pid.get_output(), motor::direction::Forward);
     wheel_right.runPWM(right_pid.get_output(), motor::direction::Reverse);
 
-    // Serial.println(String(counter++) + "," + String(left_pid.get_setpoint()) + "," +
-    // String(left_pid.get_input()) + "," +
-    Serial.println(String(left_pid.get_output()) + "," + String(right_pid.get_output()));
+    Serial.println(String(counter) + "," + String(left_pid.get_setpoint()) + "," + String(left_pid.get_input()) + "," +
+                   String(right_pid.get_input()));
     counter++;
 }
 
@@ -172,16 +171,13 @@ void loop() {
     delay(10);
 
     /*
-    if (counter < 250) {
+    if (counter < 500) {
         pid::set_setpoint(&pid::left_pid, 60);
         pid::set_setpoint(&pid::right_pid, 60);
-        delay(2000);
-        pid::set_setpoint(&pid::left_pid, 30);
-        pid::set_setpoint(&pid::right_pid, 30);
-        delay(2000);
+        delay(5000);
         pid::set_setpoint(&pid::left_pid, 0);
         pid::set_setpoint(&pid::right_pid, 0);
-        delay(2000);
+        delay(5000);
     } else {
         pid::set_setpoint(&pid::left_pid, 0);
         pid::set_setpoint(&pid::right_pid, 0);

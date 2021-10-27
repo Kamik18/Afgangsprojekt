@@ -31,7 +31,7 @@ namespace pid {
     const double   Kp = 0.5;
     const double   Ki = 1.5;
     const double   Kd = 0.01;
-    PID_controller left_pid(Kp * 1.13, Ki, Kd);
+    PID_controller left_pid(Kp * 1.13, Ki * 1.13, Kd * 1.13);
     PID_controller right_pid(Kp, Ki, Kd);
 
     extern void regulator();
