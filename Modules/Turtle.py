@@ -11,7 +11,6 @@ class Turtle:
 
     def get_pos(self):
         data = self.bus.read_i2c_block_data(self.address, 0, 25)
-        data = [0] * 25
         bumper = data[0]
         x = struct.unpack('d', bytearray(data[1:9]))[0]
         y = struct.unpack('d', bytearray(data[9:17]))[0]
@@ -28,6 +27,5 @@ class Turtle:
         else:
             cmd[2] = int(abs(ang) * 255)
         self.bus.write_i2c_block_data(self.address, 0, cmd)
-
 
 turtle = Turtle()

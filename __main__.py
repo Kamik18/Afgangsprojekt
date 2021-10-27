@@ -40,13 +40,13 @@ if __name__ == '__main__':
     factor = 4
     goal = [(pos[0] * factor, pos[1] * factor) for pos in goal]
 
-    # Test on robot
-    #'''
-    # Reset the encoders
-    reset_encoder()
-
     # Compute the desired trajectory
     desired_traj = compute_traj(goal)
+
+    # Test on robot
+    # '''
+    # Reset the encoders
+    reset_encoder()
 
     # Calculate the trajectory
     trajectory = lqr.closed_loop_prediction(desired_traj)
@@ -71,13 +71,10 @@ if __name__ == '__main__':
     plt.gca().set_position([0, 0, 1, 1])
     plt.savefig("Robot.svg")
     plt.show()
-    #'''
+    # '''
 
     # Simulation on robot
-    #'''
-    # Compute the desired trajectory
-    desired_traj = compute_traj(goal)
-
+    '''
     # Calculate the trajectory
     trajectory = lqr.closed_loop_prediction(desired_traj, True)
 
