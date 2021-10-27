@@ -1,16 +1,16 @@
-#import smbus
+import smbus
 import struct
 
 
 class Turtle:
     def __init__(self):
         # Create an I2C bus
-        #self.bus = smbus.SMBus(1)
+        self.bus = smbus.SMBus(1)
         # Set address
         self.address = 25
 
     def get_pos(self):
-        #data = self.bus.read_i2c_block_data(self.address, 0, 25)
+        data = self.bus.read_i2c_block_data(self.address, 0, 25)
         data = [0] * 25
         bumper = data[0]
         x = struct.unpack('d', bytearray(data[1:9]))[0]
@@ -27,7 +27,7 @@ class Turtle:
             cmd[1] = int(abs(ang) * 255)
         else:
             cmd[2] = int(abs(ang) * 255)
-        #self.bus.write_i2c_block_data(self.address, 0, cmd)
+        self.bus.write_i2c_block_data(self.address, 0, cmd)
 
 
 turtle = Turtle()
