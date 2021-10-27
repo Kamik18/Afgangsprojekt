@@ -1,5 +1,6 @@
 import atexit
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import Modules.cubic_spline_planner as csp
 import Modules.lqr_control as lqr
 from Modules.Turtle import turtle
@@ -53,13 +54,15 @@ if __name__ == '__main__':
     trajectory = lqr.closed_loop_prediction(desired_traj)
     end = time.time()
     print("Elapsed time: ", round(end - start, 2))
+    np.savetxt("Robot.csv", trajectory, delimiter=",")
+
 
     # Stop the turtle
     turtle.set_velocity(0, 0)
 
     # Display the trajectory that the mobile robot executed
     plt.close()
-    flg, _ = plt.subplots(1)
+    flg, ax = plt.subplots(1)
     plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [
         exit(0) if event.key == 'escape' else None])
     plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Trajectory")
@@ -68,8 +71,10 @@ if __name__ == '__main__':
     plt.axis("equal")
     plt.xlabel("x[m]")
     plt.ylabel("y[m]")
-    plt.xlim(min(trajectory[:, 0]) - 1, max(trajectory[:, 0]) + 1)
-    plt.ylim(min(trajectory[:, 1]) - 1, max(trajectory[:, 1]) + 1)
+    plt.xlim(0, 22.5)
+    plt.ylim(0, 12.5)
+    ax.xaxis.set_major_locator(MultipleLocator(2.5))
+    ax.yaxis.set_major_locator(MultipleLocator(2.5))
     plt.legend()
     plt.gca().set_position([0, 0, 1, 1])
     plt.savefig("Robot.svg")
@@ -80,10 +85,11 @@ if __name__ == '__main__':
     '''
     # Calculate the trajectory
     trajectory = lqr.closed_loop_prediction(desired_traj, True)
+    np.savetxt("Simulering.csv", trajectory, delimiter=",")
 
     # Display the trajectory that the mobile robot executed
     plt.close()
-    flg, _ = plt.subplots(1)
+    flg, ax = plt.subplots(1)
     plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [
         exit(0) if event.key == 'escape' else None])
     plt.plot(desired_traj[:, 0], desired_traj[:, 1], ".b", label="Trajectory")
@@ -92,8 +98,10 @@ if __name__ == '__main__':
     plt.axis("equal")
     plt.xlabel("x[m]")
     plt.ylabel("y[m]")
-    plt.xlim(min(trajectory[:, 0]) - 1, max(trajectory[:, 0]) + 1)
-    plt.ylim(min(trajectory[:, 1]) - 1, max(trajectory[:, 1]) + 1)
+    plt.xlim(0, 22.5)
+    plt.ylim(0, 12.5)
+    ax.xaxis.set_major_locator(MultipleLocator(2.5))
+    ax.yaxis.set_major_locator(MultipleLocator(2.5))
     plt.legend()
     plt.gca().set_position([0, 0, 1, 1])
     plt.savefig("Simulering.svg")

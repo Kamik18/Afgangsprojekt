@@ -1,11 +1,7 @@
 # Import important libraries
 import numpy as np
-import matplotlib.pyplot as plt
 import Modules.kinematics as kin
 from Modules.Turtle import turtle
-import time
-
-show_animation = False
 
 
 def get_R():
@@ -14,7 +10,7 @@ def get_R():
 
 
 def get_Q():
-    penalty_pos = 0.5
+    penalty_pos = 0.3
     penalty_ang = 1.0
     return np.array([[penalty_pos, 0, 0],  # Penalize X position error (global coordinates)
                      # Penalize Y position error (global coordinates)
@@ -47,16 +43,13 @@ def closed_loop_prediction(desired_traj, simulation=False):
     state = np.array(
         [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
 
-    OFFSET = state
+    OFFSET = state[0:2]
 
     if (not simulation):
-        state, _ = turtle.get_pos()
-        print("Start: ", desired_traj[0])
-        print("Initial state ", state)
+        state, _ = turtle.get_pos(OFFSET)
 
-    # Get the Cost-to-go and input cost matrices for LQR
-    Q = get_Q()  # Defined in kinematics.py
-    R = get_R()  # Defined in kinematics.py
+    Q = get_Q()
+    R = get_R()
 
     # Create objects for storing states and estimated state
     trajectory = np.array([state])
@@ -78,7 +71,7 @@ def closed_loop_prediction(desired_traj, simulation=False):
             state = kin.forward(state, u_lqr, dt)
         else:
             turtle.set_velocity(u_lqr[0], u_lqr[1])
-            state, bumper = turtle.get_pos()
+            state, bumper = turtle.get_pos(OFFSET)
 
             if (bumper == 1):
                 print("Bumper pressed")
@@ -116,27 +109,6 @@ def closed_loop_prediction(desired_traj, simulation=False):
         # Update the distance error
         else:
             prev_distance = distance_target
-
-        # Plot the vehicles trajectory
-        if show_animation:
-            plt.cla()
-            plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [
-                exit(0) if event.key == 'escape' else None])
-            plt.plot(trajectory[:, 0], trajectory[:, 1],
-                     "-g", label="Tracking")
-            plt.plot(desired_traj[index, 0],
-                     desired_traj[index, 1], "xb", label="Target")
-            plt.plot(
-                desired_traj[0: index, 0], desired_traj[0: index, 1], "-b", label="Trajectory")
-            plt.title(str(np.around(u_lqr, 2)) + " m/s")
-            plt.legend()
-            plt.grid(True)
-            plt.axis("equal")
-            plt.xlabel("x[m]")
-            plt.ylabel("y[m]")
-            plt.xlim(state[0] - 0.5, state[0] + 0.5)
-            plt.ylim(state[1] - 0.5, state[1] + 0.5)
-            plt.pause(0.0001)
 
     # Return the trajectory
     return trajectory
