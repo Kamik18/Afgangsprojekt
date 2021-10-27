@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # goal = [(0.0, 0.0), (0.1, 0.0), (0.2, 0.0), (1.5, 0.0), (2.0, 0.0), (2.5, 1.0), (0.5, 2.0), (0.0, 4.0), (1.0, 4.0), (2.0, 2.0), (0.0, 0.0)]
 
     # Scale the map
-    factor = 1
+    factor = 4
     goal = [(pos[0] * factor, pos[1] * factor) for pos in goal]
 
     # Compute the desired trajectory
@@ -62,8 +62,8 @@ if __name__ == '__main__':
     flg, _ = plt.subplots(1)
     plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [
         exit(0) if event.key == 'escape' else None])
-    plt.plot(desired_traj[:, 0], desired_traj[:, 1], ".b", label="Trajectory")
-    plt.plot(trajectory[:, 0], trajectory[:, 1], "-g", label="Tracking")
+    plt.plot(desired_traj[:, 0], desired_traj[:, 1], "-b", label="Trajectory")
+    plt.plot(trajectory[:, 0], trajectory[:, 1], "--g", label="Tracking")
     plt.grid(True)
     plt.axis("equal")
     plt.xlabel("x[m]")

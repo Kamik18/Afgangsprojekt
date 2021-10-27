@@ -3,65 +3,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Modules.kinematics as kin
 from Modules.Turtle import turtle
+import time
 
 show_animation = False
 
 
 def get_R():
-    """
-    This function provides the R matrix to the lqr_control simulator.
-
-    Returns the input cost matrix R.
-
-    Experiment with different gains.
-    This matrix penalizes actuator effort
-    (i.e. rotation of the motors on the wheels).
-    The R matrix has the same number of rows as are actuator states
-    [linear velocity of the car, angular velocity of the car]
-    [meters per second, radians per second]
-    This matrix often has positive values along the diagonal.
-    We can target actuator states where we want low actuator
-    effort by making the corresponding value of R large.
-
-    Output
-      :return: R: Input cost matrix
-    """
-    R = np.array([[0.1, 0],  # Linear velocity
-                  [0, 0.2]])  # Angular velocity
-
-    return R
+    return np.array([[0.1, 0],  # Linear velocity
+                     [0, 0.2]])  # Angular velocity
 
 
 def get_Q():
-    """
-    This function provides the Q matrix to the lqr_control simulator.
-
-    Returns the state cost matrix Q.
-
-    Experiment with different gains to see their effect on the vehicle's
-    behavior.
-    Q helps us weight the relative importance of each state in the state
-    vector (X, Y, THETA).
-    Q is a square matrix that has the same number of rows as there are states.
-    Q penalizes bad performance.
-    Q has positive values along the diagonal and zeros elsewhere.
-    Q enables us to target states where we want low error by making the
-    corresponding value of Q large.
-    We can start with the identity matrix and tweak the values through trial
-    and error.
-
-    Output
-      :return: Q: State cost matrix (3x3 matrix because the state vector is
-                  (X, Y, THETA))
-    """
-    penalty_pos = 0.3
+    penalty_pos = 0.5
     penalty_ang = 1.0
-    Q = np.array([[penalty_pos, 0, 0],  # Penalize X position error (global coordinates)
-                  # Penalize Y position error (global coordinates)
-                  [0, penalty_pos, 0],
-                  [0, 0, penalty_ang]])  # Penalize heading error (global coordinates)
-
-    return Q
+    return np.array([[penalty_pos, 0, 0],  # Penalize X position error (global coordinates)
+                     # Penalize Y position error (global coordinates)
+                     [0, penalty_pos, 0],
+                     [0, 0, penalty_ang]])  # Penalize heading error (global coordinates)
 
 
 def validate(value, limit_lower, limit_upper):
@@ -79,7 +37,6 @@ def dist_points(point1, point2):
 
 def closed_loop_prediction(desired_traj, simulation=False):
     # Simulation Parameters
-    T = desired_traj.shape[0]  # Maximum simulation time
     goal_dis = 0.01  # How close we need to get to the goal
     dist_threshold = 0.01
     dt = 1 / 20  # Timestep interval
@@ -87,11 +44,12 @@ def closed_loop_prediction(desired_traj, simulation=False):
 
     # Initial States
     # Initial state of the car
-    state = np.array([0, 0, 0])
-    if (simulation):
-        state = np.array(
-            [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
-    else:
+    state = np.array(
+        [desired_traj[0, 0], desired_traj[0, 1], desired_traj[0, 2]])
+
+    OFFSET = state
+
+    if (not simulation):
         state, _ = turtle.get_pos()
         print("Start: ", desired_traj[0])
         print("Initial state ", state)
@@ -105,6 +63,7 @@ def closed_loop_prediction(desired_traj, simulation=False):
 
     prev_distance = np.inf
     index = 1
+
     while (index < len(desired_traj)):
         # Generate optimal control commands
         u_lqr = kin.dLQR(Q, R, state, desired_traj[index, 0:3], dt)
