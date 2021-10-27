@@ -26,8 +26,8 @@ namespace encoder {
     const double distance_between_wheel = 0.29;
 
     // Position in meter
-    double state_x        = 8.94628638 * 2;
-    double state_y        = 3.15493121 * 2;
+    double state_x        = 4.4731431876293675 * 3;
+    double state_y        = 1.5774656033118226 * 3;
     double state_theata   = -0.88761753;
     double time_span      = 0;
     double distance_left  = 0;
