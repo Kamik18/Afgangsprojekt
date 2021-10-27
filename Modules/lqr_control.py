@@ -26,8 +26,8 @@ def get_R():
     Output
       :return: R: Input cost matrix
     """
-    R = np.array([[0.1, 0],  # Penalization for linear velocity effort
-                  [0, 0.2]])  # Penalization for angular velocity effort
+    R = np.array([[0.1, 0],  # Linear velocity
+                  [0, 0.2]])  # Angular velocity
 
     return R
 
@@ -145,6 +145,8 @@ def closed_loop_prediction(desired_traj, simulation=False):
                     (distance_target > distance_target_next)):
                 prev_distance = distance_target_next
                 index += 1
+                print(index, " of ", len(desired_traj))
+
         # Validate if goal is reached
         elif ((distance_target < goal_dis) or
               (distance_target >= prev_distance)):
