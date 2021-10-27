@@ -22,20 +22,22 @@ const uint8_t enc_right = 7;
 // Motor instances
 const motor::Motor wheel_left(3, 12);
 const motor::Motor wheel_right(11, 13);
-// uint32_t           counter = 0;
+uint32_t           counter = 0;
 
 void pid::regulator() {
-    left_pid.input  = (encoder::distance_left * 100) / encoder::time_span;
-    right_pid.input = (encoder::distance_right * 100) / encoder::time_span;
+    left_pid.set_input((encoder::distance_left * 100) / encoder::time_span);
+    right_pid.set_input((encoder::distance_right * 100) / encoder::time_span);
 
     left_pid.pid.Compute();
     right_pid.pid.Compute();
 
-    wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
-    wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
+    wheel_left.runPWM(left_pid.get_output(), motor::direction::Forward);
+    wheel_right.runPWM(right_pid.get_output(), motor::direction::Reverse);
 
-    // Serial.println(String(counter++) + "," + String(left_pid.setpoint) + "," + String(left_pid.input) + "," +
-    //                String(right_pid.input));
+    // Serial.println(String(counter++) + "," + String(left_pid.get_setpoint()) + "," +
+    // String(left_pid.get_input()) + "," +
+    Serial.println(String(left_pid.get_output()) + "," + String(right_pid.get_output()));
+    counter++;
 }
 
 bool is_bumper_pressed() {
@@ -55,8 +57,8 @@ bool is_bumper_pressed() {
         // Update PID setpoint
         pid::set_setpoint(&pid::left_pid, 0);
         pid::set_setpoint(&pid::right_pid, 0);
-        pid::left_pid.output  = 0;
-        pid::right_pid.output = 0;
+        pid::left_pid.set_output(0);
+        pid::right_pid.set_output(0);
         return true;
     } else {
         digitalWrite(horn, LOW);
@@ -71,13 +73,13 @@ bool is_bumper_pressed() {
 void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
     const double lin_vel = lin / 255.0;
 
-    const double limit   = 40.0;
+    const double limit   = 60.0;
     const double ang_vel = (static_cast<double>(ang_p - ang_n) / 255.0) * (encoder::distance_between_wheel / 2.0);
     double       left    = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
     double       right   = constrain(((lin_vel + ang_vel) * limit), 0.0, limit);
 
-    pid::set_setpoint(&pid::left_pid, (left == 0) ? 0 : (left + pid::left_pid.setpoint) / 2.0);
-    pid::set_setpoint(&pid::right_pid, (right == 0) ? 0 : (right + pid::right_pid.setpoint) / 2.0);
+    pid::set_setpoint(&pid::left_pid, left);
+    pid::set_setpoint(&pid::right_pid, right);
 }
 
 void receiveEvent(int howMany) {
@@ -147,8 +149,10 @@ void setup() {
     pid::left_pid.pid.SetMode(AUTOMATIC);
     pid::right_pid.pid.SetMode(AUTOMATIC);
 
-    pid::left_pid.pid.SetOutputLimits(20, 255);
-    pid::right_pid.pid.SetOutputLimits(20, 255);
+    const double lower = 20;
+    const double upper = 255;
+    pid::left_pid.pid.SetOutputLimits(lower, upper);
+    pid::right_pid.pid.SetOutputLimits(lower, upper);
 
     pid::left_pid.pid.SetSampleTime(20);
     pid::right_pid.pid.SetSampleTime(20);
@@ -168,12 +172,12 @@ void loop() {
     delay(10);
 
     /*
-    if (counter < 500) {
-        pid::set_setpoint(&pid::left_pid, 40);
-        pid::set_setpoint(&pid::right_pid, 40);
+    if (counter < 250) {
+        pid::set_setpoint(&pid::left_pid, 60);
+        pid::set_setpoint(&pid::right_pid, 60);
         delay(2000);
-        pid::set_setpoint(&pid::left_pid, 20);
-        pid::set_setpoint(&pid::right_pid, 20);
+        pid::set_setpoint(&pid::left_pid, 30);
+        pid::set_setpoint(&pid::right_pid, 30);
         delay(2000);
         pid::set_setpoint(&pid::left_pid, 0);
         pid::set_setpoint(&pid::right_pid, 0);
