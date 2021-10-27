@@ -47,9 +47,8 @@ namespace encoder {
         enc_right = 0;
 
         // Delta theta
-        const double delta_theta       = (distance_right - distance_left) / (distance_between_wheel);
-        const double rotation_velocity = delta_theta / time_span;
-
+        const double delta_theta = (distance_right - distance_left) / (distance_between_wheel);
+        
         // Distance traveled
         const double dist_traveled = (distance_left + distance_right) / 2;
 

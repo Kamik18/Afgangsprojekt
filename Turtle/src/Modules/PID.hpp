@@ -28,16 +28,11 @@ namespace pid {
     };
 
     // PID
-    const double   Kp = 3;
-    const double   Ki = 2;
-    const double   Kd = 0.05;
-    PID_controller left_pid(Kp + 0.5, Ki, Kd);
+    const double   Kp = 0.5;
+    const double   Ki = 1.5;
+    const double   Kd = 0.01;
+    PID_controller left_pid(Kp * 1.13, Ki, Kd);
     PID_controller right_pid(Kp, Ki, Kd);
-
-    // Kp 1 = 300 s
-    // Kp 2 = xx s
-    // Kp 3 = 200 s
-    // Kp 4 = 187 s
 
     extern void regulator();
 
