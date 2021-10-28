@@ -28,7 +28,8 @@ namespace encoder {
     // Position in meter
     double state_x        = 0;
     double state_y        = 0;
-    double state_theata   = -0.88761753;
+    // double state_theata   = -0.88761753;
+    double state_theata   = 0;
     double time_span      = 0;
     double distance_left  = 0;
     double distance_right = 0;
