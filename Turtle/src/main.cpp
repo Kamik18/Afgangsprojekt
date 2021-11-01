@@ -87,8 +87,10 @@ void receiveEvent(int howMany) {
     Wire.read();
 
     if ((Wire.available() == 3) && (!is_bumper_pressed())) {
+        // Update speed
         set_speed(Wire.read(), Wire.read(), Wire.read());
     } else if (Wire.available() == 1) {
+        // Play a sound
         sound::play_sound(horn);
     }
 
