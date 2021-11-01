@@ -88,6 +88,8 @@ void receiveEvent(int howMany) {
 
     if ((Wire.available() == 3) && (!is_bumper_pressed())) {
         set_speed(Wire.read(), Wire.read(), Wire.read());
+    } else if (Wire.available() == 1) {
+        sound::play_sound(horn);
     }
 
     // Clear buffer
@@ -165,9 +167,6 @@ void setup() {
     pid::timer.attachInterrupt(pid::regulator);
     pid::timer.setOverflow(20, HERTZ_FORMAT);
     pid::timer.resume();
-
-
-    sound::play_sound(horn);
 }
 
 void loop() {
