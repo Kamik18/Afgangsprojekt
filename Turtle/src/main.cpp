@@ -1,6 +1,7 @@
 #include "Modules/Encoder.hpp"
 #include "Modules/Motor.hpp"
 #include "Modules/PID.hpp"
+#include "Modules/Sound.hpp"
 //#include "Modules/PID/PID.hpp"
 #include <Arduino.h>
 #include <HardwareTimer.h>
@@ -164,6 +165,9 @@ void setup() {
     pid::timer.attachInterrupt(pid::regulator);
     pid::timer.setOverflow(20, HERTZ_FORMAT);
     pid::timer.resume();
+
+
+    sound::play_sound(horn);
 }
 
 void loop() {
