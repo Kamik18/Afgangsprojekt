@@ -1,4 +1,10 @@
-#include <Arduino.h>
+//===================================================================
+// File: Sound.cpp
+//===================================================================
+//-------------------------------------------------------------------
+// Includes
+//-------------------------------------------------------------------
+#include "Sound.hpp"
 
 namespace sound {
     // Change to 0.5 for a slower version of the song, 1.25 for a faster version
@@ -453,7 +459,11 @@ namespace sound {
                        125,
                        500};
 
+    bool is_play_sound = false;
+
     void play_sound(const uint8_t buzzer) {
+        is_play_sound = false;
+
         const int totalNotes = sizeof(notes) / sizeof(int);
         // Loop through each note
         for (int i = 0; i < totalNotes; i++) {

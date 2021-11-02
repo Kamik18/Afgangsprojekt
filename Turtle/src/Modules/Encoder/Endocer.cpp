@@ -1,4 +1,10 @@
-#include <Arduino.h>
+//===================================================================
+// File: Encoder.cpp
+//===================================================================
+//-------------------------------------------------------------------
+// Includes
+//-------------------------------------------------------------------
+#include "Encoder.hpp"
 
 namespace encoder {
     // Create a hardwaretimer
@@ -26,8 +32,8 @@ namespace encoder {
     const double distance_between_wheel = 0.29;
 
     // Position in meter
-    double state_x        = 0;
-    double state_y        = 0;
+    double state_x = 0;
+    double state_y = 0;
     // double state_theata   = -0.88761753;
     double state_theata   = 0;
     double time_span      = 0;
@@ -49,7 +55,7 @@ namespace encoder {
 
         // Delta theta
         const double delta_theta = (distance_right - distance_left) / (distance_between_wheel);
-        
+
         // Distance traveled
         const double dist_traveled = (distance_left + distance_right) / 2;
 

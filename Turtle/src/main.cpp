@@ -1,8 +1,8 @@
-#include "Modules/Encoder.hpp"
-#include "Modules/Motor.hpp"
-#include "Modules/PID.hpp"
-#include "Modules/Sound.hpp"
-//#include "Modules/PID/PID.hpp"
+#include "Modules/Encoder/Encoder.hpp"
+#include "Modules/Motor/Motor.hpp"
+#include "Modules/Sound/Sound.hpp"
+#include "Modules/PID/PID.hpp"
+
 #include <Arduino.h>
 #include <HardwareTimer.h>
 #include <Wire.h>
@@ -35,8 +35,9 @@ void pid::regulator() {
     wheel_left.runPWM(left_pid.get_output(), motor::direction::Forward);
     wheel_right.runPWM(right_pid.get_output(), motor::direction::Reverse);
 
-    Serial.println(String(counter) + "," + String(left_pid.get_setpoint()) + "," + String(left_pid.get_input()) + "," +
-                   String(right_pid.get_input()));
+    // Serial.println(String(counter) + "," + String(left_pid.get_setpoint()) + "," + String(left_pid.get_input()) + ","
+    // +
+    //                String(right_pid.get_input()));
     counter++;
 }
 
@@ -90,8 +91,8 @@ void receiveEvent(int howMany) {
         // Update speed
         set_speed(Wire.read(), Wire.read(), Wire.read());
     } else if (Wire.available() == 1) {
-        // Play a sound
-        sound::play_sound(horn);
+        // Set flag
+        sound::is_play_sound = true;
     }
 
     // Clear buffer
@@ -174,6 +175,12 @@ void setup() {
 void loop() {
     is_bumper_pressed();
     delay(10);
+
+    // Check flag
+    if (sound::is_play_sound) {
+        // Play a sound
+        sound::play_sound(horn);
+    }
 
     /*
     if (counter < 500) {
