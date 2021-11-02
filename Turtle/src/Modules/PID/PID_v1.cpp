@@ -54,7 +54,11 @@ bool PID::Compute() {
         return false;
     unsigned long now        = millis();
     unsigned long timeChange = (now - lastTime);
-    if (timeChange >= SampleTime) {
+    if (timeChange >= SampleTime || true) {
+        if (*mySetpoint == 0) {
+            *myOutput = 0;
+            return true;
+        }
         /*Compute all the working error variables*/
         double input  = *myInput;
         double error  = *mySetpoint - input;
@@ -123,7 +127,7 @@ void PID::SetTunings(double Kp, double Ki, double Kd, int POn) {
 }
 
 /* SetTunings(...)*************************************************************
- * Set Tunings using the last-rembered POn setting
+ * Set Tunings using the last-remembered POn setting
  ******************************************************************************/
 void PID::SetTunings(double Kp, double Ki, double Kd) { SetTunings(Kp, Ki, Kd, pOn); }
 
