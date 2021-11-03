@@ -163,7 +163,7 @@ def resize_img():
     print(f'{path}{testdir[0]}')
     img = cv2.imread(path + f'{testdir[0]}')
 
-    newimg = cv2.resize(img, (480,480))
+    newimg = cv2.resize(img, (480,640))
 
     
     plt.imshow(img)
