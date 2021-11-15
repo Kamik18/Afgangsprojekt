@@ -2,7 +2,9 @@ import cv2
 import numpy as np   
 import time
 import sys
+import os
 import pyrealsense2.pyrealsense2 as rs    # RealSense cross-platform open-source API
+#import pyrealsense2 as rs    # RealSense cross-platform open-source API
 
 def time_convert(sec):
   mins = sec // 60
@@ -33,8 +35,10 @@ if not found_rgb:
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 
 if device_product_line == 'L500':
+    print("960x540")
     config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
 else:
+    print("640x480")
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
 # Start streaming
@@ -46,44 +50,60 @@ textThickness = 2
 start_point = (100,250)
 end_point = (520,450)
 
+path='../../../Tensorflow/workspace/training_demo/'
+start_num=106
 
 try:
-  while True:
-      start = time.time()
-      frameset = pipeline.wait_for_frames() 
-      color_frame = frameset.get_color_frame()      
-      depth_frame = frameset.get_depth_frame()                
-      img = np.asanyarray(color_frame.get_data())  
-      depth_image = np.asanyarray(depth_frame.get_data())
-      
-      # Crop depth data:
-      depth = img[start_point[1]:end_point[1],start_point[0]:end_point[0]]
-      print(depth.shape)
-  
-      width = color_frame.get_width()
-      height = color_frame.get_height()
-      
-      print("middle point = ", int(width/2), int(height/2), ", Distance = ", depth_frame.get_distance(int(width/2), int(height/2)), " m")
-      
-      # Printing Circles
-      img = cv2.circle(img,(int(width/2),int(height/2)), radius=2, color=(0, 0, 255), thickness=3)
-      cv2.putText(img,"Midt",(int(width/2)+10,int(height/2)+30),
-      cv2.FONT_HERSHEY_COMPLEX,textScale,(0,0,255),textThickness)
-      cv2.rectangle(img, start_point, end_point,color=(255,255,255),thickness=2)
-      depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)       
-      cv2.namedWindow('Output', cv2.WINDOW_NORMAL)
-      cv2.resizeWindow('Output', 640,480)
-      cv2.moveWindow('Output', 260,0)
-      cv2.imshow("Output", img)
-      cv2.namedWindow('depth', cv2.WINDOW_NORMAL)
-      cv2.resizeWindow('depth', 640,480)
-      cv2.moveWindow('depth', 900,0)
-      cv2.imshow("depth", depth_colormap)
-
-      cv2.waitKey(1)
-      end = time.time()
+    while True:
+        start = time.time()
+        frameset = pipeline.wait_for_frames() 
+        color_frame = frameset.get_color_frame()      
+        depth_frame = frameset.get_depth_frame()                
+        img = np.asanyarray(color_frame.get_data())  
+        depth_image = np.asanyarray(depth_frame.get_data())
+        
+        # Crop depth data:
+        depth = img[start_point[1]:end_point[1],start_point[0]:end_point[0]]
+        print(depth.shape)
     
-      time_convert(end - start)
+        width = color_frame.get_width()
+        height = color_frame.get_height()
+        
+        print("middle point = ", int(width/2), int(height/2), ", Distance = ", depth_frame.get_distance(int(width/2), int(height/2)), " m")
+        
+        # Printing Circles
+        #img = cv2.circle(img,(int(width/2),int(height/2)), radius=2, color=(0, 0, 255), thickness=3)
+        #cv2.putText(img,"Midt",(int(width/2)+10,int(height/2)+30),
+        #cv2.FONT_HERSHEY_COMPLEX,textScale,(0,0,255),textThickness)
+        #cv2.rectangle(img, start_point, end_point,color=(255,255,255),thickness=2)
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)       
+        cv2.namedWindow('Output', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('Output', 640,480)
+        cv2.moveWindow('Output', 260,0)
+        cv2.imshow("Output", img)
+        #cv2.namedWindow('depth', cv2.WINDOW_NORMAL)
+        #cv2.resizeWindow('depth', 640,480)
+        #cv2.moveWindow('depth', 900,0)
+        #cv2.imshow("depth", depth_colormap)
+
+        ch =  cv2.waitKey(0)  # Wait for for user to hit any key
+        print("ch value: ", ch)
+        #Save image if s (115) was pressed on keyboard
+        if (ch==115):
+           print("saving image")
+           #new = fr'{path}\Alfa_Laval_Sensor_{start_num}.jpg'
+           #print(new)
+           cv2.imwrite(f'{path}/Alfa_Laval_Sensor_{start_num}.jpg',img)
+           start_num+=1
+           
+        
+        if(ch==27):# If Escape Key was hit just exit the loop
+            print("exit loop")
+            break
+
+        end = time.time()
+        
+        time_convert(end - start)
 
 except KeyboardInterrupt:
     cv2.destroyAllWindows()
