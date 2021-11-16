@@ -45,7 +45,7 @@ else:
 colorizer = rs.colorizer()                                # Mapping depth data into RGB color space
 profile = pipeline.start(config)
 
-textScale = 0.7
+textScale = 0.7 
 textThickness = 2
 start_point = (100,250)
 end_point = (520,450)
