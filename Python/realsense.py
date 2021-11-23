@@ -51,7 +51,7 @@ start_point = (100,250)
 end_point = (520,450)
 
 path='../../../Tensorflow/workspace/training_demo/'
-start_num=117
+start_num=177
 
 try:
     while True:

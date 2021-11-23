@@ -171,4 +171,28 @@ def resize_img():
     plt.imshow(newimg)
     plt.show()
 
-resize_img()
+# Split CSV
+def split_csv():
+    with open('C:\\Temp\\img temp\\csv\\test.csv', newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+
+    print(data[0])
+
+    line_header = (data[0][4], data[0][5], data[0][6], data[0][7])
+    data.pop(0)   
+    
+    
+    #print(name)
+    for i in data:
+        line_data = (i[4], i[5], i[6], i[7])
+        name = i[0].replace("jpg", "csv")
+        with open(f'C:\\Temp\\img temp\\test\\{name}', 'w', encoding='UTF8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(line_header)
+            writer.writerow(line_data)
+            f.close()
+
+
+split_csv()
+
