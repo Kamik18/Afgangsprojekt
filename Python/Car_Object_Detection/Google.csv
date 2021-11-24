@@ -1,0 +1,5 @@
+﻿set,path,label,topleft_x,topleft_y,topright_x,topright_y,btmright_x,btmright_y,btmleft_x,btmleft_y
+TRAIN,C:\Users\emila\Documents\Diplomingeniør lokal\GitHubDesktop\Afgangsprojekt\Python\Car_Object_Detection\data\training_images\vid_4_600.jpg,Car,286.64,187.52,,,407.95,232.03,,
+TRAIN,C:\Users\emila\Documents\Diplomingeniør lokal\GitHubDesktop\Afgangsprojekt\Python\Car_Object_Detection\data\training_images\vid_4_620.jpg,Car,19.57,193.88,,,113.48,233.28,,
+VALIDATION,C:\Users\emila\Documents\Diplomingeniør lokal\GitHubDesktop\Afgangsprojekt\Python\Car_Object_Detection\data\training_images\vid_4_680.jpg,Car,570.34,187.04,,,676.00,254.53,,
+TEST,C:\Users\emila\Documents\Diplomingeniør lokal\GitHubDesktop\Afgangsprojekt\Python\Car_Object_Detection\data\testing_images\vid_5_400.jpg,,,,,,,,,

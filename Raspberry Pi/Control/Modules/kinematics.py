@@ -51,25 +51,6 @@ class DifferentialDrive(object):
         """
         return 2
 
-    def get_V(self):
-        """
-        This function provides the covariance matrix V which 
-        describes the noise that can be applied to the forward kinematics.
-
-        Feel free to experiment with different levels of noise.
-
-        Output
-          :return: V: input cost matrix (3 x 3 matrix)
-        """
-        # The np.eye function returns a 2D array with ones on the diagonal
-        # and zeros elsewhere.
-        if self.V is None:
-            self.V = np.eye(3)
-            self.V[0, 0] = 0.01
-            self.V[1, 1] = 0.01
-            self.V[2, 2] = 0.1
-        return 1e-5*self.V
-
     def forward(self, x0, u, dt=0.1):
         """
         Computes the forward kinematics for the system.
@@ -106,7 +87,6 @@ class DifferentialDrive(object):
         x1 = np.empty(3)
 
         # Calculate the new state of the system
-        # Noise is added like in slide 34 in Lecture 7
         x1[0] = x0[0] + x_dot * dt  # X
         x1[1] = x0[1] + y_dot * dt  # Y
         x1[2] = x0[2] + u_angvel * dt  # THETA
@@ -214,9 +194,8 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
     # 1. LQR via Dynamic Programming
     P[N] = Qf
 
-    # 2. For t = N, ..., 1
+    # 2. For t = N, ..., -1
     for t in range(N, 0, -1):
-
         # Discrete-time Algebraic Riccati equation to calculate the optimal
         # state cost matrix
         P[t-1] = Q + A.T @ P[t] @ A - (A.T @ P[t] @ B) @ la.pinv(
@@ -228,12 +207,10 @@ def dLQR(F, Q, R, x, xf, dt=0.1):
 
     # 3 and 4. For t = 0, ..., N - 1
     for t in range(N):
-
         # Calculate the optimal feedback gain K_t
         K[t] = -la.pinv(R + B.T @ P[t+1] @ B) @ B.T @ P[t+1] @ A
 
     for t in range(N):
-
         # Calculate the optimal control input
         u[t] = K[t] @ x_error
 
@@ -263,8 +240,8 @@ def get_R():
     Output
       :return: R: Input cost matrix
     """
-    R = np.array([[0.01, 0],  # Penalization for linear velocity effort
-                  [0, 0.001]]) # Penalization for angular velocity effort
+    R = np.array([[0.001, 0],  # Penalization for linear velocity effort
+                  [0, 0.005]]) # Penalization for angular velocity effort
 
     return R
 
@@ -291,8 +268,9 @@ def get_Q():
       :return: Q: State cost matrix (3x3 matrix because the state vector is 
                   (X, Y, THETA))
     """
-    penalty = 0.3
-    Q = np.array([[penalty, 0.0, 0.0],  # Penalize X position error (global coordinates)
-                  [0.0, penalty, 0.0],  # Penalize Y position error (global coordinates)
-                  [0.0, 0.0, penalty]]) # Penalize heading error (global coordinates)
+    penalty_pos = 0.95
+    penalty_angle = 0.95
+    Q = np.array([[penalty_pos, 0.0, 0.0],  # Penalize X position error (global coordinates)
+                  [0.0, penalty_pos, 0.0],  # Penalize Y position error (global coordinates)
+                  [0.0, 0.0, penalty_angle]]) # Penalize heading error (global coordinates)
     return Q

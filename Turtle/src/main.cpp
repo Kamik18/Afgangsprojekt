@@ -1,8 +1,8 @@
+#include "Modules/Encoder/Encoder.hpp"
+#include "Modules/Motor/Motor.hpp"
+#include "Modules/Sound/Sound.hpp"
+#include "Modules/PID/PID.hpp"
 
-#include "Modules/Encoder.hpp"
-#include "Modules/Motor.hpp"
-#include "Modules/PID.hpp"
-//#include "Modules/PID/PID.hpp"
 #include <Arduino.h>
 #include <HardwareTimer.h>
 #include <Wire.h>
@@ -23,24 +23,22 @@ const uint8_t enc_right = 7;
 // Motor instances
 const motor::Motor wheel_left(3, 12);
 const motor::Motor wheel_right(11, 13);
-//uint32_t counter = 0;
-//pid::PidStruct *test_pid = &pid::left_pid;
+uint32_t           counter = 0;
 
 void pid::regulator() {
-    left_pid.input  = (encoder::distance_left * 100) / encoder::time_span;
-    right_pid.input = (encoder::distance_right * 100) / encoder::time_span;
+    left_pid.set_input((encoder::distance_left * 100) / encoder::time_span);
+    right_pid.set_input((encoder::distance_right * 100) / encoder::time_span);
 
     left_pid.pid.Compute();
     right_pid.pid.Compute();
 
-    wheel_left.runPWM((0 == left_pid.setpoint) ? 0 : left_pid.output * 1.13, motor::direction::Forward);
-    wheel_right.runPWM((0 == right_pid.setpoint) ? 0 : right_pid.output, motor::direction::Reverse);
+    wheel_left.runPWM(left_pid.get_output(), motor::direction::Forward);
+    wheel_right.runPWM(right_pid.get_output(), motor::direction::Reverse);
 
-    //Serial.println(String(counter++) + "," + String(test_pid->setpoint) + "," + String(test_pid->input));
-    // Serial.println(String(right_pid.setpoint) + "," + String(right_pid.input) + "," + String(right_pid.output));
-    // Serial.println(String(left_pid.input) + "," + String(right_pid.input));
-    // Serial.println(String(left_pid.setpoint) + "," + String(right_pid.setpoint));
-    // Serial.println(String(left_pid.setpoint - right_pid.setpoint));
+    // Serial.println(String(counter) + "," + String(left_pid.get_setpoint()) + "," + String(left_pid.get_input()) + ","
+    // +
+    //                String(right_pid.get_input()));
+    counter++;
 }
 
 bool is_bumper_pressed() {
@@ -60,8 +58,8 @@ bool is_bumper_pressed() {
         // Update PID setpoint
         pid::set_setpoint(&pid::left_pid, 0);
         pid::set_setpoint(&pid::right_pid, 0);
-        pid::left_pid.output  = 0;
-        pid::right_pid.output = 0;
+        pid::left_pid.set_output(0);
+        pid::right_pid.set_output(0);
         return true;
     } else {
         digitalWrite(horn, LOW);
@@ -74,23 +72,15 @@ bool is_bumper_pressed() {
 // @param lin The linear velocity.
 // @param ang The angular velocity.
 void set_speed(const uint8_t lin, const uint8_t ang_p, const uint8_t ang_n) {
-    const double lin_vel = constrain(lin, 0.0, 255.0) / 255.0;
+    const double lin_vel = lin / 255.0;
 
-    const double ang_vel =
-        constrain((static_cast<double>(ang_p - ang_n) / 100.0) * (encoder::distance_between_wheel / 2.0), -1.0, 1.0);
-    double left  = constrain(((lin_vel - ang_vel) * 50.0), 0.0, 50.0);
-    double right = constrain(((lin_vel + ang_vel) * 50.0), 0.0, 50.0);
+    const double limit   = 60.0;
+    const double ang_vel = (static_cast<double>(ang_p - ang_n) / 255.0) * (encoder::distance_between_wheel / 2.0);
+    double       left    = constrain(((lin_vel - ang_vel) * limit), 0.0, limit);
+    double       right   = constrain(((lin_vel + ang_vel) * limit), 0.0, limit);
 
-    if (255 == ang_n) {
-        left  = 15.0;
-        right = 0.0;
-    } else if (255 == ang_p) {
-        left  = 0.0;
-        right = 15.0;
-    }
-
-    pid::set_setpoint(&pid::left_pid, (left == 0) ? 0 : (left + pid::left_pid.setpoint) / 2.0);
-    pid::set_setpoint(&pid::right_pid, (right == 0) ? 0 : (right + pid::right_pid.setpoint) / 2.0);
+    pid::set_setpoint(&pid::left_pid, left);
+    pid::set_setpoint(&pid::right_pid, right);
 }
 
 void receiveEvent(int howMany) {
@@ -98,7 +88,11 @@ void receiveEvent(int howMany) {
     Wire.read();
 
     if ((Wire.available() == 3) && (!is_bumper_pressed())) {
+        // Update speed
         set_speed(Wire.read(), Wire.read(), Wire.read());
+    } else if (Wire.available() == 1) {
+        // Set flag
+        sound::is_play_sound = true;
     }
 
     // Clear buffer
@@ -160,8 +154,10 @@ void setup() {
     pid::left_pid.pid.SetMode(AUTOMATIC);
     pid::right_pid.pid.SetMode(AUTOMATIC);
 
-    pid::left_pid.pid.SetOutputLimits(80, 255);
-    pid::right_pid.pid.SetOutputLimits(80, 255);
+    const double lower = 20;
+    const double upper = 255;
+    pid::left_pid.pid.SetOutputLimits(lower, upper);
+    pid::right_pid.pid.SetOutputLimits(lower, upper);
 
     pid::left_pid.pid.SetSampleTime(20);
     pid::right_pid.pid.SetSampleTime(20);
@@ -180,11 +176,24 @@ void loop() {
     is_bumper_pressed();
     delay(10);
 
+    // Check flag
+    if (sound::is_play_sound) {
+        // Play a sound
+        sound::play_sound(horn);
+    }
 
-    // pid::set_setpoint(test_pid, 40);
-    // delay(2000);
-    // pid::set_setpoint(test_pid, 20);
-    // delay(2000);
-    // pid::set_setpoint(test_pid, 0);
-    // delay(2000);
+    /*
+    if (counter < 500) {
+        pid::set_setpoint(&pid::left_pid, 60);
+        pid::set_setpoint(&pid::right_pid, 60);
+        delay(5000);
+        pid::set_setpoint(&pid::left_pid, 0);
+        pid::set_setpoint(&pid::right_pid, 0);
+        delay(5000);
+    } else {
+        pid::set_setpoint(&pid::left_pid, 0);
+        pid::set_setpoint(&pid::right_pid, 0);
+        delay(2000);
+    }
+    */
 }

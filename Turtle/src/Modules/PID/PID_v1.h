@@ -8,6 +8,8 @@ class PID {
 #define P_ON_M 0
 #define P_ON_E 1
 
+    PID() = default;
+    
     // commonly used functions **************************************************************************
     PID(double *,
         double *,

@@ -15,9 +15,9 @@ def pi_2_pi(angle):
 
 def compute_traj(ax, ay):
     cx, cy, cyaw, ck, s = calc_spline_course(ax, ay, ds=0.1)
-    target_speed = 3  # simulation parameter km/h -> m/s
+    target_speed = 1.0  # simulation parameter km/h -> m/s
     sp = calc_speed_profile(cx, cy, cyaw, target_speed)
-
+                
     desired_traj = np.array([cx, cy, cyaw, sp]).T
     return desired_traj
 
