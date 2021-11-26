@@ -30,8 +30,8 @@ print('max_memory_reserved', torch.cuda.max_memory_reserved() / 1000000000, 'GB'
 
 # %%
 # Set file path
-images_path = Path('./data/road_signs/images')
-anno_path = Path('./data/road_signs/annotations')
+images_path = Path('../data/road_signs/images')
+anno_path = Path('../data/road_signs/annotations')
 
 # Create methods for loading in images and annotations
 def filelist(root, file_type):
@@ -109,7 +109,7 @@ def resize_image_bb(read_path,write_path,bb,sz):
 #Populating Training DF with new paths and bounding boxes
 new_paths = []
 new_bbs = []
-train_path_resized = Path('./data/road_signs/images_resized')
+train_path_resized = Path('../data/road_signs/images_resized')
 for index, row in df_train.iterrows():
     new_path,new_bb = resize_image_bb(row['filename'], train_path_resized, create_bb_array(row.values),300)
     new_paths.append(new_path)
@@ -205,7 +205,8 @@ def show_corner_bb(im, bb):
     plt.imshow(im)
     plt.gca().add_patch(create_corner_rect(bb))
 
-
+# %%
+print(df_train.values[68])
 # %%
 # Display a sample image
 im = cv2.imread(str(df_train.values[68][8]))
@@ -226,11 +227,12 @@ show_corner_bb(im, bb)
 
 # %%
 # Train-valid split
+print(df_train.values[58])
 df_train = df_train.reset_index()
 X = df_train[['new_path', 'new_bb']]
 Y = df_train['class']
 X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
-
+print(df_train.values[58])
 
 # %%
 # Define datset methods
@@ -262,7 +264,7 @@ class RoadDataset(Dataset):
 #Setup dataset
 train_ds = RoadDataset(X_train['new_path'],X_train['new_bb'] ,y_train, transforms=True)
 valid_ds = RoadDataset(X_val['new_path'],X_val['new_bb'],y_val)
-batch_size = 8
+batch_size = 4
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 valid_dl = DataLoader(valid_ds, batch_size=batch_size)
 
@@ -342,6 +344,7 @@ class BB_model(nn.Module):
         return self.classifier(x), self.bb(x)
 # %%
 # Model definition - efficientnet_b0
+"""
 class BB_model(nn.Module):
     def __init__(self):
         super(BB_model, self).__init__()
@@ -359,7 +362,7 @@ class BB_model(nn.Module):
         x = nn.AdaptiveAvgPool2d((1,1))(x)
         x = x.view(x.shape[0], -1)
         return self.classifier(x), self.bb(x)
-
+"""
 
 #%%
 import time
@@ -467,7 +470,7 @@ print('max_memory_reserved', torch.cuda.max_memory_reserved() / 1000000000, 'GB'
 # Before traning - empty the cache and run garbage collector
 torch.cuda.memory_summary()
 
-train_epocs(model, optimizer, train_dl, valid_dl, epochs=15)
+train_epocs(model, optimizer, train_dl, valid_dl, epochs=4)
 
 # %%
 # Making predictions
@@ -478,13 +481,13 @@ X_val
 # %%
 selected_image = 'road116'
 # resizing test image
-im = read_image(f'./data/road_signs/images_resized/{selected_image}.png')
+im = read_image(f'../data/road_signs/images_resized/{selected_image}.png')
 im = cv2.resize(im, (int(1.49*300), 300))
-cv2.imwrite(f'./data/road_signs/road_signs_test/{selected_image}.jpg', cv2.cvtColor(im, cv2.COLOR_RGB2BGR))
+cv2.imwrite(f'../data/road_signs/road_signs_test/{selected_image}.jpg', cv2.cvtColor(im, cv2.COLOR_RGB2BGR))
 
 # %
 # test Dataset
-test_ds = RoadDataset(pd.DataFrame([{'path':f'./data/road_signs/road_signs_test/{selected_image}.jpg'}])['path'],pd.DataFrame([{'bb':np.array([0,0,0,0])}])['bb'],pd.DataFrame([{'y':[0]}])['y'])
+test_ds = RoadDataset(pd.DataFrame([{'path':f'../data/road_signs/road_signs_test/{selected_image}.jpg'}])['path'],pd.DataFrame([{'bb':np.array([0,0,0,0])}])['bb'],pd.DataFrame([{'y':[0]}])['y'])
 x, y_class, y_bb = test_ds[0]
 
 xx = torch.FloatTensor(x[None,])
