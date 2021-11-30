@@ -22,6 +22,7 @@ from pathlib import Path
 import random
 from sklearn.model_selection import train_test_split
 import xml.etree.ElementTree as ET
+import Modules.BB as bnbx
 print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
 
@@ -77,54 +78,24 @@ def generate_train_df (anno_path):
         anno['width'] = root.find("./size/width").text
         anno['height'] = root.find("./size/height").text
         
+        bndboxes = []
         i = 0
         for objct in objects:
             i += 1   
             bndbox = {}
-            bndbox['class'] = objct.find("./name").text
+            bndbox['class'] = 0#objct.find("./name").text
             bndbox['xmin'] = int(objct.find("./bndbox/xmin").text)
             bndbox['ymin'] = int(objct.find("./bndbox/ymin").text)
             bndbox['xmax'] = int(objct.find("./bndbox/xmax").text)
             bndbox['ymax'] = int(objct.find("./bndbox/ymax").text)
-            anno[f'bndbox{i}'] = bndbox            
+            bndboxes.append(bndbox)
+            
+        anno['bndbox'] = bndboxes            
         anno_list.append(anno)
     return pd.DataFrame(anno_list)
 
-#%%
-root = ET.parse('../data/alfalaval/test/Alfa_Laval_Sensor_86.xml').getroot()
-
-objects = []
-for child in root:
-    if child.tag == 'object':
-        objects.append(child)
-anno = {}
-anno['filename'] = Path(str(images_path) + '/'+ root.find("./filename").text)
-anno['width'] = root.find("./size/width").text
-anno['height'] = root.find("./size/height").text
-
-i = 0
-for objct in objects:
-    i += 1   
-    bndbox = {}
-    bndbox['class'] = objct.find("./name").text
-    bndbox['xmin'] = int(objct.find("./bndbox/xmin").text)
-    bndbox['ymin'] = int(objct.find("./bndbox/ymin").text)
-    bndbox['xmax'] = int(objct.find("./bndbox/xmax").text)
-    bndbox['ymax'] = int(objct.find("./bndbox/ymax").text)
-    anno[f'bndbox{i}'] = bndbox
-
-print(anno)
-#print(anno)
-#for child in root:
-#    print(child.tag, child.attrib)
-#    if child.tag == 'object':
-#        print(f'in {child.tag}')
-#        for i in child:
-#            if i.tag == 'bndbox':
-#                for bndbox in i:
-#                    print(bndbox.text)
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Test
+# Fake dataframe
 dataframe_temp = generate_train_df('../data/alfalaval/test')
 print(dataframe_temp.values)
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -132,114 +103,59 @@ print(dataframe_temp.values)
 # Generate train dataframes
 df_train = generate_train_df(anno_path)
 
-# Label encode target
-bndbox_cols = [col for col in df_train.columns if 'bndbox' in col]
-for cols in bndbox_cols:
-    for s in df_train[cols]:
-        if not pd.isna(s):
-            s['class'] = 0
-
 # Print dataframe shape
 print(df_train.shape)
 df_train.head()
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Define methods for resizing and bounding boxes
-def read_image(path):
-    return cv2.cvtColor(cv2.imread(str(path)), cv2.COLOR_BGR2RGB)
-
-def create_mask(bb, x):
-    """Creates a mask for the bounding box of same shape as image"""
-    rows,cols,*_ = x.shape
-    Y = np.zeros((rows, cols))
-    for bndbox in bb:
-        bndbox = bndbox.astype(np.int)
-        Y[bndbox[1]:bndbox[3], bndbox[0]:bndbox[2]] = 1.
-    return Y
-
-def mask_to_bb(Y):
-    """Convert mask Y to a bounding box, assumes 0 as background nonzero object"""
-    cols, rows = np.nonzero(Y)
-    if len(cols)==0: 
-        return np.zeros(4, dtype=np.float32)
-    top_row = np.min(rows)
-    left_col = np.min(cols)
-    bottom_row = np.max(rows)
-    right_col = np.max(cols)
-    return np.array([left_col, top_row, right_col, bottom_row], dtype=np.float32)
-
-def create_bbs_array(x):
-    """Generates array of bounding boxes from a train_df row"""
-    array = []
-    for i in range(3,6):
-        if not pd.isna(x[i]):
-            array.append(np.array([x[i]['xmin'],x[i]['ymin'],x[i]['xmax'],x[i]['ymax']]))
-    return array
-
-def resize_image_bb(read_path,write_path,bb,sz):
-    """Resize an image and its bounding box and write image to new path"""
-    im = read_image(read_path)
-    #im_resized = cv2.resize(im, (int(1.49*sz), sz))
-    Y_resized = cv2.resize(create_mask(bb, im), (int(1.49*sz), sz))
-    new_path = str(write_path/read_path.parts[-1])
-    #cv2.imwrite(new_path, cv2.cvtColor(im_resized, cv2.COLOR_RGB2BGR))
-    return new_path, mask_to_bb(Y_resized)
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Test
-from torchvision.ops import masks_to_boxes
-def create_bbs_array(x):
-    """Generates bounding box array from a train_df row"""
-    array = []
-    for i in range(3,6):
-        if not pd.isna(x[i]):
-            array.append(np.array([x[i]['xmin'],x[i]['ymin'],x[i]['xmax'],x[i]['ymax']]))
-    return array
-
-def create_mask(bb, x):
-    """Creates a mask for the bounding box of same shape as image"""
-    rows,cols,*_ = x.shape
-    Y = np.zeros((rows, cols))
-    for bndbox in bb:
-        bndbox = bndbox.astype(np.int)
-        Y[bndbox[1]:bndbox[3], bndbox[0]:bndbox[2]] = 1.
-    return Y
-
-def mask_to_bb(Y):
-    """Convert mask Y to a bounding box, assumes 0 as background nonzero object"""
-    cols, rows = np.nonzero(Y)
-    if len(cols)==0: 
-        return np.zeros(4, dtype=np.float32)
-    top_row = np.min(rows)
-    left_col = np.min(cols)
-    bottom_row = np.max(rows)
-    right_col = np.max(cols)
-    return np.array([left_col, top_row, right_col, bottom_row], dtype=np.float32)
-
-def mask_to_box(Y):
-    boxes = masks_to_boxes(torch.from_numpy(Y))
-    print(boxes.size())
-    print(boxes)
-
+train_path_resized = Path(f'{data_dir}/test/images_resized')
 for index, row in dataframe_temp.iterrows():
-    print(row[0])
-    bbs = create_bbs_array(row.values)
-    for i in bbs:
-        print(i)
-    im = read_image(row[0])
-    Y = create_mask(bbs, im)
-    mask_to_box(Y)
+    #print(row)
+    bbs = bnbx.create_bbs_array(row.values)
+    
+    #bbs = create_bbs_array(row.values)
+    print(bbs)
+    im = bnbx.read_image(row[0])
+    #im = read_image(row[0])
+    images = bnbx.create_masks(bbs, im)
+    #images = create_masks(bbs, im)
+    for bb in bbs:
+        start_point = (bb[0], bb[1])
+        end_point = (bb[2], bb[3])
+        cv2.rectangle(im, (start_point), end_point, (0, 0, 255), 2)
 
+    new_path,new_bbs = bnbx.resize_image_bb(row['filename'], train_path_resized, bnbx.create_bbs_array(row.values),300)
+    #new_path,new_bbs = resize_image_bb(row['filename'], train_path_resized, create_bbs_array(row.values),300)
+    im2 = bnbx.read_image(new_path)
+    #im2 = read_image(new_path)
+    im_mask = bnbx.create_masks(new_bbs, im2)
+    #im_mask = create_masks(new_bbs, im2)
+    print("resized bounding box")
+    for bb in new_bbs:
+        print(bb)
+        start_point = (int(bb[0]), int(bb[1]))
+        end_point = (int(bb[2]), int(bb[3]))
+        cv2.rectangle(im2, (start_point), end_point, (0, 0, 255), 2)
+
+    # Plot
     fig = plt.figure(figsize=(10, 7))
-    rows = 1
+    fig.suptitle(row[0])
+    rows = 2
     columns = 2
     fig.add_subplot(rows, columns, 1)
-    plt.title(row[0])
+    plt.title(f'Original')
     plt.imshow(im)
     fig.add_subplot(rows, columns, 2)
-    plt.title("Mask")
-    plt.imshow(Y, cmap='gray')
-    TODO : FIX CONVERT FROM MASK TO BB
+    plt.title(f'Resized')
+    plt.imshow(im2)
+    fig.add_subplot(rows, columns, 3)
+    plt.title("Original Mask")
+    plt.imshow(images[-1], cmap='gray')
+    fig.add_subplot(rows, columns, 4)
+    plt.title("Resized Mask")
+    plt.imshow(im_mask[-1], cmap='gray')
+    
     #print(row.values[4])
     #print('')
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,7 +164,7 @@ new_paths = []
 new_bbs = []
 train_path_resized = Path(f'{data_dir}/images_resized')
 for index, row in df_train.iterrows():
-    new_path,new_bb = resize_image_bb(row['filename'], train_path_resized, create_bbs_array(row.values),300)
+    new_path,new_bb = bnbx.resize_image_bb(row['filename'], train_path_resized, bnbx.create_bbs_array(row.values),300)
     new_paths.append(new_path)
     new_bbs.append(new_bb)
 df_train['new_path'] = new_paths
@@ -257,6 +173,37 @@ df_train['new_bb'] = new_bbs
 print(df_train.values[58])
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+num = 131
+print(df_train.values[num])
+# Read image and create bounding box
+
+im = cv2.imread(str(df_train.values[num][0]))
+bbs = bnbx.create_bbs_array(df_train.values[num])
+print(im.shape)
+
+Y = bnbx.create_masks(bbs, im)[-1]
+
+# Show image and image of new mask
+fig = plt.figure(figsize=(10, 7))
+fig.suptitle(str(df_train.values[num][0]))
+rows = 1
+columns = 2
+fig.add_subplot(rows, columns, 1)
+plt.title("Original")
+plt.imshow(im)
+fig.add_subplot(rows, columns, 2)
+plt.title("Mask")
+plt.imshow(Y, cmap='gray')
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#print(df_train.values[num])
+
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+import Modules.BB as bnbx
+
 # Data Augmentation - define methods
 # modified from fast.ai
 def crop(im, r, c, target_r, target_c): 
@@ -286,8 +233,9 @@ def rotate_cv(im, deg, y=False, mode=cv2.BORDER_REFLECT, interpolation=cv2.INTER
         return cv2.warpAffine(im, M,(c,r), borderMode=cv2.BORDER_CONSTANT)
     return cv2.warpAffine(im,M,(c,r), borderMode=mode, flags=cv2.WARP_FILL_OUTLIERS+interpolation)
 
-def random_cropXY(x, Y, r_pix=8):
+def random_cropXY(x, masks, r_pix=8):
     """ Returns a random crop"""
+    new_masks = []
     r, c,*_ = x.shape
     c_pix = round(r_pix*c/r)
     rand_r = random.uniform(0, 1)
@@ -295,58 +243,45 @@ def random_cropXY(x, Y, r_pix=8):
     start_r = np.floor(2*rand_r*r_pix).astype(int)
     start_c = np.floor(2*rand_c*c_pix).astype(int)
     xx = crop(x, start_r, start_c, r-2*r_pix, c-2*c_pix)
-    YY = crop(Y, start_r, start_c, r-2*r_pix, c-2*c_pix)
-    return xx, YY
 
-def transformsXY(path, bb, transforms):
+    for mask in masks:
+        new_masks.append(crop(mask, start_r, start_c, r-2*r_pix, c-2*c_pix))
+    return xx, new_masks
+
+def transformsXY(path, bbs, transforms):
     x = cv2.imread(str(path)).astype(np.float32)
     x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)/255
-    Y = create_mask(bb, x)
+    # Select last mask
+    masks = bnbx.create_masks(bbs, x)
+    crazynumber = np.random.random()
     if transforms:
-        rdeg = (np.random.random()-.50)*20
-        x = rotate_cv(x, rdeg)
-        Y = rotate_cv(Y, rdeg, y=True)
-        if np.random.random() > 0.5: 
-            x = np.fliplr(x).copy()
-            Y = np.fliplr(Y).copy()
-        x, Y = random_cropXY(x, Y)
-    else:
-        x, Y = center_crop(x), center_crop(Y)
-    return x, mask_to_bb(Y)
+        for i in range(len(masks)):
+            #if crazynumber > 0.5 or True:
+            masks[i] = np.fliplr(masks[i]).copy()        
 
-def create_corner_rect(bb, color='red'):
-    bb = np.array(bb, dtype=np.float32)
-    return plt.Rectangle((bb[1], bb[0]), bb[3]-bb[1], bb[2]-bb[0], color=color,
-                         fill=False, lw=3)
+        if crazynumber > 0.5 or True: 
+            x = np.fliplr(x).copy()
+        x, masks = random_cropXY(x, masks)
+    else:
+        x = center_crop(x), 
+        for mask in masks:
+            mask = center_crop(mask)
+
+    return x, bnbx.mask_to_bbs(masks)
+
+def create_corner_rect(bbs, color='red'):
+    for bb in bbs:
+        bb = np.array(bb, dtype=np.float32)
+        plt.gca().add_patch(plt.Rectangle((bb[0], bb[1]), bb[2]-bb[0], bb[3]-bb[1], color=color,
+                         fill=False, lw=3))
 
 def show_corner_bb(im, bb):
     plt.imshow(im)
-    plt.gca().add_patch(create_corner_rect(bb))
+    create_corner_rect(bb)
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-num = 130
-print(df_train.values[num])
-# Read image and create bounding box
-
-im = cv2.imread(str(df_train.values[num][0]))
-bb = create_bb_array(df_train.values[num])
-print(im.shape)
-
-Y = create_mask(bb, im)
-mask_to_bb(Y)
-
-# Show image and image of new mask
-fig = plt.figure(figsize=(10, 7))
-rows = 1
-columns = 2
-fig.add_subplot(rows, columns, 1)
-plt.title("Original")
-plt.imshow(im)
-fig.add_subplot(rows, columns, 2)
-plt.title("Mask")
-plt.imshow(Y, cmap='gray')
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-im = cv2.imread(str(df_train.values[num][8]))
+import Modules.dataaugmentation as dataaug
+im = cv2.imread(str(df_train.values[num][-2]))
 im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
 fig = plt.figure(figsize=(10, 7))
@@ -355,12 +290,13 @@ columns = 2
 fig.add_subplot(rows, columns, 1)
 #original
 plt.title("Original")
-show_corner_bb(im, df_train.values[num][9])
+show_corner_bb(im, df_train.values[num][-1])
 fig.add_subplot(rows, columns, 2)
 # after transformation
 plt.title("After Transform")
-im, bb = transformsXY(str(df_train.values[num][8]),df_train.values[num][9],True )
-show_corner_bb(im, bb)
+im, bbs = transformsXY(str(df_train.values[num][-2]),df_train.values[num][-1],True )
+print(bbs)
+show_corner_bb(im, bbs)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
