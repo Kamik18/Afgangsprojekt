@@ -219,20 +219,18 @@ fig.add_subplot(rows, columns, 1)
 #original
 plt.title("Original")
 show_corner_bb(im, df_train.values[68][9])
-fig.add_subplot(rows, columns, 2)
+#fig.add_subplot(rows, columns, 2)
 # after transformation
-plt.title("After Transform")
-im, bb = transformsXY(str(df_train.values[68][8]),df_train.values[68][9],True )
-show_corner_bb(im, bb)
+#plt.title("After Transform")
+#im, bb = transformsXY(str(df_train.values[68][8]),df_train.values[68][9],True )
+#show_corner_bb(im, bb)
 
 # %%
 # Train-valid split
-print(df_train.values[58])
 df_train = df_train.reset_index()
 X = df_train[['new_path', 'new_bb']]
 Y = df_train['class']
 X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
-print(df_train.values[58])
 
 # %%
 # Define datset methods

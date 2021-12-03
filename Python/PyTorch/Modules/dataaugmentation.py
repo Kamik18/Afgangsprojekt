@@ -25,16 +25,9 @@ def center_crop(x, r_pix=8):
     c_pix = round(r_pix*c/r)
     return crop(x, r_pix, c_pix, r-2*r_pix, c-2*c_pix)
 
-def rotate_cv(im, deg, y=False, mode=cv2.BORDER_REFLECT, interpolation=cv2.INTER_AREA):
-    """ Rotates an image by deg degrees"""
-    r,c,*_ = im.shape
-    M = cv2.getRotationMatrix2D((c/2,r/2),deg,1)
-    if y:
-        return cv2.warpAffine(im, M,(c,r), borderMode=cv2.BORDER_CONSTANT)
-    return cv2.warpAffine(im,M,(c,r), borderMode=mode, flags=cv2.WARP_FILL_OUTLIERS+interpolation)
-
-def random_cropXY(x, Y, r_pix=8):
+def random_cropXY(x, masks, r_pix=8):
     """ Returns a random crop"""
+    new_masks = []
     r, c,*_ = x.shape
     c_pix = round(r_pix*c/r)
     rand_r = random.uniform(0, 1)
@@ -42,31 +35,38 @@ def random_cropXY(x, Y, r_pix=8):
     start_r = np.floor(2*rand_r*r_pix).astype(int)
     start_c = np.floor(2*rand_c*c_pix).astype(int)
     xx = crop(x, start_r, start_c, r-2*r_pix, c-2*c_pix)
-    YY = crop(Y, start_r, start_c, r-2*r_pix, c-2*c_pix)
-    return xx, YY
 
-def transformsXY(path, bb, transforms):
+    for mask in masks:
+        new_masks.append(crop(mask, start_r, start_c, r-2*r_pix, c-2*c_pix))
+    return xx, new_masks
+
+def transformsXY(path, bbs, transforms):
     x = cv2.imread(str(path)).astype(np.float32)
     x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)/255
     # Select last mask
-    Y = bnbx.create_masks(bb, x)[-1]
+    masks = bnbx.create_masks(bbs, x)
+    crazynumber = np.random.random()
     if transforms:
-        rdeg = (np.random.random()-.50)*20
-        x = rotate_cv(x, rdeg)
-        Y = rotate_cv(Y, rdeg, y=True)
-        if np.random.random() > 0.5: 
-            x = np.fliplr(x).copy()
-            Y = np.fliplr(Y).copy()
-        x, Y = random_cropXY(x, Y)
-    else:
-        x, Y = center_crop(x), center_crop(Y)
-    return x, bnbx.mask_to_bbs(Y)
+        for i in range(len(masks)):
+            if crazynumber > 0.5:
+                masks[i] = np.fliplr(masks[i]).copy()        
 
-def create_corner_rect(bb, color='red'):
-    bb = np.array(bb, dtype=np.float32)
-    return plt.Rectangle((bb[1], bb[0]), bb[3]-bb[1], bb[2]-bb[0], color=color,
-                         fill=False, lw=3)
+        if crazynumber > 0.5: 
+            x = np.fliplr(x).copy()
+        x, masks = random_cropXY(x, masks)
+    else:
+        x = center_crop(x), 
+        for mask in masks:
+            mask = center_crop(mask)
+
+    return x, bnbx.mask_to_bbs(masks)
+
+def create_corner_rect(bbs, color='red'):
+    for bb in bbs:
+        bb = np.array(bb, dtype=np.float32)
+        plt.gca().add_patch(plt.Rectangle((bb[0], bb[1]), bb[2]-bb[0], bb[3]-bb[1], color=color,
+                         fill=False, lw=3))
 
 def show_corner_bb(im, bb):
     plt.imshow(im)
-    plt.gca().add_patch(create_corner_rect(bb))
+    create_corner_rect(bb)

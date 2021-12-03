@@ -2,14 +2,11 @@
 # Imports
 from __future__ import print_function
 from __future__ import division
-from math import nan
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import numpy as np
-from torch.utils import data
 import torchvision
-from torchvision import datasets, models, transforms
+from torchvision import models
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
@@ -19,10 +16,10 @@ import copy
 import cv2
 import pandas as pd
 from pathlib import Path
-import random
 from sklearn.model_selection import train_test_split
 import xml.etree.ElementTree as ET
 import Modules.BB as bnbx
+import Modules.dataaugmentation as dataaug
 print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
 
@@ -33,7 +30,8 @@ print('memory_reserved', torch.cuda.memory_reserved() / 1000000000, 'GB')
 print('max_memory_reserved', torch.cuda.max_memory_reserved() / 1000000000, 'GB')
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Top level data directory. Here we assume the format of the directory conforms to the ImageFolder structure
-data_dir = "../data/alfalaval"
+#data_dir = "../data/alfalaval"
+data_dir = '../data/AlfaLavalFinal'
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "resnet"
@@ -107,11 +105,14 @@ df_train = generate_train_df(anno_path)
 print(df_train.shape)
 df_train.head()
 
+#%%
+print(data_dir)
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Test
-train_path_resized = Path(f'{data_dir}/test/images_resized')
-for index, row in dataframe_temp.iterrows():
+train_path_resized = Path(f'{data_dir}/images')
+for index, row in df_train.iterrows():
     #print(row)
+    print(str(row[0]).rsplit('\\', 1)[1])
     bbs = bnbx.create_bbs_array(row.values)
     
     #bbs = create_bbs_array(row.values)
@@ -140,24 +141,39 @@ for index, row in dataframe_temp.iterrows():
 
     # Plot
     fig = plt.figure(figsize=(10, 7))
-    fig.suptitle(row[0])
-    rows = 2
+    #fig.suptitle(row[0])
+    rows = 1#2
     columns = 2
     fig.add_subplot(rows, columns, 1)
-    plt.title(f'Original')
-    plt.imshow(im)
-    fig.add_subplot(rows, columns, 2)
-    plt.title(f'Resized')
-    plt.imshow(im2)
-    fig.add_subplot(rows, columns, 3)
-    plt.title("Original Mask")
-    plt.imshow(images[-1], cmap='gray')
-    fig.add_subplot(rows, columns, 4)
-    plt.title("Resized Mask")
+    #plt.title(f'Original')
+    #plt.imshow(im)
+    #fig.add_subplot(rows, columns, 2)
+    #plt.title(f'Resized')
+    #plt.imshow(im2)
+    #fig.add_subplot(rows, columns, 3)
+    #plt.title("Original Mask")
+    #plt.imshow(images[-1], cmap='gray')
+    #fig.add_subplot(rows, columns, 4)
+    #plt.title("Resized Mask")
+    #plt.imshow(im_mask[-1], cmap='gray')
+    name = str(row[0]).rsplit('\\', 1)[1].replace('.jpg', '_mask.jpg')
+    outputpath = f'{data_dir}/masks/{name}'
+    print(outputpath)
     plt.imshow(im_mask[-1], cmap='gray')
+    
+    # cv2.imwrite(outputpath, grayImage)
+    from PIL import Image
+    im_mask[-1] = (im_mask[-1]*255).astype(np.uint8)
+    fig.add_subplot(rows, columns, 2)
+    newmask = Image.fromarray(im_mask[-1], 'P')
+    newmask.convert('RGB').save(outputpath)
+    plt.imshow(newmask)
+    
+    
     
     #print(row.values[4])
     #print('')
+
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 print(df_train.values[58])
 new_paths = []
@@ -195,92 +211,9 @@ fig.add_subplot(rows, columns, 2)
 plt.title("Mask")
 plt.imshow(Y, cmap='gray')
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#print(df_train.values[num])
-
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import Modules.BB as bnbx
-
-# Data Augmentation - define methods
-# modified from fast.ai
-def crop(im, r, c, target_r, target_c): 
-    return im[r:r+target_r, c:c+target_c]
-
-# random crop to the original size
-def random_crop(x, r_pix=8):
-    """ Returns a random crop"""
-    r, c,*_ = x.shape
-    c_pix = round(r_pix*c/r)
-    rand_r = random.uniform(0, 1)
-    rand_c = random.uniform(0, 1)
-    start_r = np.floor(2*rand_r*r_pix).astype(int)
-    start_c = np.floor(2*rand_c*c_pix).astype(int)
-    return crop(x, start_r, start_c, r-2*r_pix, c-2*c_pix)
-
-def center_crop(x, r_pix=8):
-    r, c,*_ = x.shape
-    c_pix = round(r_pix*c/r)
-    return crop(x, r_pix, c_pix, r-2*r_pix, c-2*c_pix)
-
-def rotate_cv(im, deg, y=False, mode=cv2.BORDER_REFLECT, interpolation=cv2.INTER_AREA):
-    """ Rotates an image by deg degrees"""
-    r,c,*_ = im.shape
-    M = cv2.getRotationMatrix2D((c/2,r/2),deg,1)
-    if y:
-        return cv2.warpAffine(im, M,(c,r), borderMode=cv2.BORDER_CONSTANT)
-    return cv2.warpAffine(im,M,(c,r), borderMode=mode, flags=cv2.WARP_FILL_OUTLIERS+interpolation)
-
-def random_cropXY(x, masks, r_pix=8):
-    """ Returns a random crop"""
-    new_masks = []
-    r, c,*_ = x.shape
-    c_pix = round(r_pix*c/r)
-    rand_r = random.uniform(0, 1)
-    rand_c = random.uniform(0, 1)
-    start_r = np.floor(2*rand_r*r_pix).astype(int)
-    start_c = np.floor(2*rand_c*c_pix).astype(int)
-    xx = crop(x, start_r, start_c, r-2*r_pix, c-2*c_pix)
-
-    for mask in masks:
-        new_masks.append(crop(mask, start_r, start_c, r-2*r_pix, c-2*c_pix))
-    return xx, new_masks
-
-def transformsXY(path, bbs, transforms):
-    x = cv2.imread(str(path)).astype(np.float32)
-    x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)/255
-    # Select last mask
-    masks = bnbx.create_masks(bbs, x)
-    crazynumber = np.random.random()
-    if transforms:
-        for i in range(len(masks)):
-            #if crazynumber > 0.5 or True:
-            masks[i] = np.fliplr(masks[i]).copy()        
-
-        if crazynumber > 0.5 or True: 
-            x = np.fliplr(x).copy()
-        x, masks = random_cropXY(x, masks)
-    else:
-        x = center_crop(x), 
-        for mask in masks:
-            mask = center_crop(mask)
-
-    return x, bnbx.mask_to_bbs(masks)
-
-def create_corner_rect(bbs, color='red'):
-    for bb in bbs:
-        bb = np.array(bb, dtype=np.float32)
-        plt.gca().add_patch(plt.Rectangle((bb[0], bb[1]), bb[2]-bb[0], bb[3]-bb[1], color=color,
-                         fill=False, lw=3))
-
-def show_corner_bb(im, bb):
-    plt.imshow(im)
-    create_corner_rect(bb)
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-import Modules.dataaugmentation as dataaug
+
 im = cv2.imread(str(df_train.values[num][-2]))
 im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
@@ -290,13 +223,13 @@ columns = 2
 fig.add_subplot(rows, columns, 1)
 #original
 plt.title("Original")
-show_corner_bb(im, df_train.values[num][-1])
+dataaug.show_corner_bb(im, df_train.values[num][-1])
 fig.add_subplot(rows, columns, 2)
 # after transformation
 plt.title("After Transform")
-im, bbs = transformsXY(str(df_train.values[num][-2]),df_train.values[num][-1],True )
+im, bbs = dataaug.transformsXY(str(df_train.values[num][-2]),df_train.values[num][-1],True )
 print(bbs)
-show_corner_bb(im, bbs)
+dataaug.show_corner_bb(im, bbs)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -306,7 +239,7 @@ def normalize(im):
     imagenet_stats = np.array([[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]])
     return (im - imagenet_stats[0])/imagenet_stats[1]
 
-class RoadDataset(Dataset):
+class AlfaLavalDataset(Dataset):
     def __init__(self, paths, bb, y, transforms=False):
         self.transforms = transforms
         self.paths = paths.values
@@ -318,24 +251,75 @@ class RoadDataset(Dataset):
     def __getitem__(self, idx):
         path = self.paths[idx]
         y_class = self.y[idx]
-        x, y_bb = transformsXY(path, self.bb[idx], self.transforms)
+        x, y_bbs = dataaug.transformsXY(path, self.bb[idx], self.transforms)
         x = normalize(x)
         x = np.rollaxis(x, 2)
-        return x, y_class, y_bb
+        return x, y_class, y_bbs
 
+# %%
+# TEST
+print(dataframe_temp.values[0])
+print(dataframe_temp.values[1])
+
+new_paths = []
+new_bbs = []
+train_path_resized = Path(f'{data_dir}/test/images_resized')
+print("iteration")
+for index, row in dataframe_temp.iterrows():
+    print(row)
+    new_path,new_bb = bnbx.resize_image_bb(row['filename'], train_path_resized, bnbx.create_bbs_array(row.values),300)
+    new_paths.append(new_path)
+    new_bbs.append(new_bb)
+dataframe_temp['new_path'] = new_paths
+dataframe_temp['new_bb'] = new_bbs
+dataframe_temp.head()
+
+#%%
+# Test
+dataframe_temp = dataframe_temp.reset_index()
+X = dataframe_temp[['new_path', 'new_bb']]
+classlist = []
+for boxes in dataframe_temp['bndbox']:
+    classlist.append(boxes[0]['class'])
+Y = pd.DataFrame(columns=['class'])
+Y['class'] = classlist
+
+X_train_temp, X_val_temp, y_train_temp, y_val_temp = train_test_split(X, Y, test_size=0.5, random_state=42)
+#%%
+print("X_train_temp {0}".format(X_train_temp))
+#%%
+print("X_val_temp {0}".format(X_val_temp))
+#%%
+print("y_train_temp {0}".format(y_train_temp))
+#%%
+print("y_val_temp {0}".format(y_val_temp))
+#%%
+train_ds_temp = AlfaLavalDataset(X_train_temp['new_path'],X_train_temp['new_bb'] ,y_train_temp, transforms=True)
+for i in train_ds_temp:
+    print(i)
+#%%
+valid_ds_temp = AlfaLavalDataset(X_val_temp['new_path'],X_val_temp['new_bb'],y_val_temp)
+batch_size = 8
+train_dl_temp = DataLoader(train_ds_temp, batch_size=batch_size, shuffle=True)
+valid_dl_temp = DataLoader(valid_ds_temp, batch_size=batch_size)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Train-valid split
 df_train = df_train.reset_index()
 X = df_train[['new_path', 'new_bb']]
-Y = df_train['class']
+classlist = []
+for boxes in df_train['bndbox']:
+    classlist.append(boxes[0]['class'])
+Y = pd.DataFrame(columns=['class'])
+Y['class'] = classlist
+
 X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #Setup dataset
-train_ds = RoadDataset(X_train['new_path'],X_train['new_bb'] ,y_train, transforms=True)
-valid_ds = RoadDataset(X_val['new_path'],X_val['new_bb'],y_val)
+train_ds = AlfaLavalDataset(X_train['new_path'],X_train['new_bb'] ,y_train, transforms=True)
+valid_ds = AlfaLavalDataset(X_val['new_path'],X_val['new_bb'],y_val)
 batch_size = 8
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 valid_dl = DataLoader(valid_ds, batch_size=batch_size)

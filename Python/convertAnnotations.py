@@ -1,3 +1,4 @@
+from typing import NewType
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -194,5 +195,82 @@ def split_csv():
             f.close()
 
 
-split_csv()
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+import xml.etree.ElementTree as ET
+def changefilename():
+    import os
+    firstnum = 180
+    #path = 'data/OnlyOneAlfaLaval'
+    img_path = 'data/temptest/images'
+    input_anno_path = 'data/temp/annotations'
+    output_anno_path = 'data/temptest/annotations'
+
+    images = os.listdir(img_path)
+    annos = os.listdir(input_anno_path)
+
+    print('IMAGES:')
+    for index, image in enumerate(images):
+        os.rename(os.path.join(img_path, image), os.path.join(img_path, str('Alfa_Laval_Sensor_' + "{0:0=3d}".format(index+firstnum) + ".jpg")))
+
+        
+    print('ANNOTATIONS:')
+    for index, anno in enumerate(annos):
+        #print(index, anno)
+        #print(os.path.join(anno_path, anno), os.path.join(anno_path, str('Alfa_Laval_Sensor_' + "{0:0=3d}".format(index+firstnum) + ".xml")))
+
+        mytree = ET.parse(f'{input_anno_path}/{anno}')
+        myroot = mytree.getroot()
+        
+        # Elements to add
+        new_name = str('Alfa_Laval_Sensor_' + "{0:0=3d}".format(index+firstnum))
+        new_path = f'{img_path}/{new_name}.jpg'
+        new_folder = 'images'
+        
+
+        # Remove specific elements
+        myroot.remove(myroot[0])
+        myroot.remove(myroot[0])
+        myroot.remove(myroot[0])
+        
+        # Add path
+        filename_element = ET.Element('path')
+        filename_element.text = new_path
+        myroot.insert(0, filename_element)
+
+        # Add filename
+        path_element = ET.Element('filename')
+        path_element.text = f'{new_name}.jpg'
+        myroot.insert(0, path_element)
+
+        # Add folder
+        folder_element = ET.Element('folder')
+        folder_element.text = new_folder
+        myroot.insert(0, folder_element)
+
+        indent(myroot)
+        with open(f'{output_anno_path}/{new_name}.xml', 'wb') as f:
+            mytree.write(f, encoding="utf-8")
+        
+    
+        #os.rename(os.path.join(path, file), os.path.join(path, str('Alfa_Laval_Sensor_' + "{0:0=3d}".format(index+61) + ".jpg")))
+
+        # os.rename(os.path.join(path, file), os.path.join(path, ''.join([str(index), '.jpg'])))
+
+changefilename()
+
 

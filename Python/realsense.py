@@ -50,8 +50,8 @@ textThickness = 2
 start_point = (100,250)
 end_point = (520,450)
 
-path='../../../Tensorflow/workspace/training_demo/'
-start_num=177
+path='data/'
+start_num=61
 
 try:
     while True:

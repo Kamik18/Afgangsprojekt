@@ -28,13 +28,15 @@ def mask_to_bbs(images):
     for Y in images[:-1]:
         rows, cols = np.nonzero(Y)
         if len(cols)==0: 
-            bbs.append(np.zeros(4, dtype=np.float32))
+            #bbs.append(np.zeros(4, dtype=np.float32))
+            bbs.append(np.zeros(4))
             continue
         top_row = np.min(rows)
         left_col = np.min(cols)
         bottom_row = np.max(rows)
         right_col = np.max(cols)
-        bbs.append(np.array([left_col, top_row, right_col, bottom_row], dtype=np.float32))
+        bbs.append(np.array([left_col, top_row, right_col, bottom_row]))
+        #bbs.append(np.array([left_col, top_row, right_col, bottom_row], dtype=np.float32))
     return bbs
 
 def create_bbs_array(x):
