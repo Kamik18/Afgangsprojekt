@@ -22,14 +22,14 @@ def createDot(img, point):
 
 number = 301
 
-#img_dir = './ObstacleAvoidance/images/*'
+img_dir = './ObstacleAvoidance/images/*'
 #num = '301'
-#images = glob(img_dir)
-img = cv2.imread('ObstacleAvoidance/images/Alfa_Laval_Sensor_301.jpg')
-#for img in images:
-if True:
+images = glob(img_dir)
+#img = cv2.imread('ObstacleAvoidance/images/Alfa_Laval_Sensor_301.jpg')
+for img in images:
+#if True:
     start = time.time()
-    #img = cv2.imread(img)
+    img = cv2.imread(img)
     # Convert image color and blur image
     #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     medianBlur = cv2.medianBlur(img, 5)
@@ -48,9 +48,6 @@ if True:
     filled_from_bottom = np.zeros((h, w))
     filled_from_bottom[inds_after_edges] = 255
 
-    cv2.imwrite(f'./ObstacleAvoidance/test/Alfa_Laval_Sensor_Fill_From_Bottom_{number}.jpg', filled_from_bottom)
-    cv2.imshow('Detection', filled_from_bottom)
-    cv2.waitKey(0)
     # Horizontal dialate and erode
     # Copy image
     horizontal = filled_from_bottom.copy()
@@ -69,19 +66,13 @@ if True:
     # 2nd horizontal erode 
     horizontal = cv2.erode(horizontal, horizontalStructure)
 
-    cv2.imwrite(f'./ObstacleAvoidance/test/Alfa_Laval_Sensor_Horizontal_{number}.jpg', horizontal)
-    cv2.imshow('Detection', horizontal)
-    cv2.waitKey(0)
-
     # Smoothed
     converted_img = Image.fromarray(np.uint8(cm.gist_earth(horizontal)*255))
-    smoothed = converted_img.filter(ImageFilter.ModeFilter(size=13))
+    #smoothed = converted_img.filter(ImageFilter.ModeFilter(size=13))
 
     # Find furthest point 
-    img_with_alpha_values = np.asarray(smoothed)
-    cv2.imwrite(f'./ObstacleAvoidance/test/Alfa_Laval_Sensor_Smoothed_{number}.jpg', img_with_alpha_values)
-    cv2.imshow('Detection', img_with_alpha_values)
-    cv2.waitKey(0)
+    #img_with_alpha_values = np.asarray(smoothed)
+    img_with_alpha_values = np.asarray(converted_img)
     # Set robot center point
     #createDot(img_with_alpha_values, (int(h*0.9), int(w/2)))
 
@@ -92,10 +83,6 @@ if True:
     # Find all occurences of white pixels
     pixel_y, pixel_x = np.nonzero(bw)
     createDot(img_with_alpha_values, (pixel_y[0], pixel_x[0]))
-
-    cv2.imwrite(f'./ObstacleAvoidance/test/Alfa_Laval_Sensor_Dot_{number}.jpg', img_with_alpha_values)
-    cv2.imshow('Detection', img_with_alpha_values)
-    cv2.waitKey(0)
 
     # Construct a colour image to superimpose
     mask = np.asarray(img_with_alpha_values)
