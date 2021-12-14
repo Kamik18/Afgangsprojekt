@@ -1,8 +1,3 @@
-"""
-A robot will follow a racetrack using an LQR controller to estimate 
-the state (i.e. x position, y position, yaw angle) at each timestep
-"""
-
 # Import important libraries
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,7 +19,6 @@ def closed_loop_prediction(desired_traj):
     dt = 0.1  # Timestep interval
     time = 0.0  # Starting time
 
-    # Initial States
     # Initial state of the car
     state = np.array([desired_traj[0, 0], desired_traj[0, 1], 0])
 
@@ -59,7 +53,6 @@ def closed_loop_prediction(desired_traj):
 
         # Add sensors and update position
         # Move forwad in time
-        state = DiffDrive.forward(state, u_lqr, dt)
         data = bus.read_i2c_block_data(address, 0, 25)
         print("x: ", struct.unpack('d', bytearray(data[1:9]))[0])
         print("y: ", struct.unpack('d', bytearray(data[9:17]))[0])
@@ -83,20 +76,6 @@ def closed_loop_prediction(desired_traj):
         #    # Increment time
         #    time = time + dt
         time = time + dt
-        '''
-        # Plot the vehicles trajectory
-        if time % 1 < 0.1 and show_animation:
-            plt.cla()
-            plt.plot(desired_traj[:, 0],
-                     desired_traj[:, 1], "-r", label="course")
-            plt.plot(traj[:, 0], traj[:, 1], "ob", label="trajectory")
-            plt.legend()
-            plt.axis("equal")
-            plt.grid(True)
-            plt.title("speed[m/s]:" + str(round(np.mean(u_lqr), 2)) +
-                      ",target index:" + str(ind))
-            plt.pause(0.0001)
-        '''
     
     bus.write_i2c_block_data(address, 0, [0, 0])
 

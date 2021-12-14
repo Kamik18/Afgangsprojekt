@@ -30,7 +30,7 @@ def icp_matching(corrected_points, feature_points, new_points, position, index):
     preError = np.inf
     count = 0
 
-    plot_points(temp_corrected_points, temp_feature_points, temp_new_points, "Before_alignment", index, position)
+    #plot_points(temp_corrected_points, temp_feature_points, temp_new_points, "Before_alignment", index, position)
 
     while dError >= EPS:
         count += 1
@@ -55,7 +55,7 @@ def icp_matching(corrected_points, feature_points, new_points, position, index):
         if (dError <= EPS) or (MAX_ITER <= count):
             break
 
-    plot_points(temp_corrected_points, temp_feature_points, temp_new_points, "After_alignment", index, position)
+    #plot_points(temp_corrected_points, temp_feature_points, temp_new_points, "After_alignment", index, position)
 
     R = np.array(H[0:-1, 0:-1])
     T = np.array(H[0:-1, -1])
@@ -155,7 +155,7 @@ def svd_motion_estimation(map_points, new_points):
 
     W = c_shift @ p_shift.T
     u, _, vh = np.linalg.svd(W)
-
+    
     R = (u @ vh).T
     t = pm - (R @ cm)
 

@@ -1,12 +1,3 @@
-"""
-Cubic spline planner
- 
-Program: cubic_spine_planner.py
- 
-This program implements a cubic spline. For more information on 
-cubic splines, check out this link:
-https://mathworld.wolfram.com/CubicSpline.html
-"""
 import math
 import numpy as np
 import bisect
@@ -42,13 +33,6 @@ class Spline:
             self.b.append(tb)
  
     def calc(self, t):
-        """
-        Calc position
- 
-        if t is outside of the input x, return None
- 
-        """
- 
         if t < self.x[0]:
             return None
         elif t > self.x[-1]:
@@ -62,12 +46,6 @@ class Spline:
         return result
  
     def calcd(self, t):
-        """
-        Calc first derivative
- 
-        if t is outside of the input x, return None
-        """
- 
         if t < self.x[0]:
             return None
         elif t > self.x[-1]:
@@ -79,10 +57,6 @@ class Spline:
         return result
  
     def calcdd(self, t):
-        """
-        Calc second derivative
-        """
- 
         if t < self.x[0]:
             return None
         elif t > self.x[-1]:
@@ -94,15 +68,9 @@ class Spline:
         return result
  
     def __search_index(self, x):
-        """
-        search data segment index
-        """
         return bisect.bisect(self.x, x) - 1
  
     def __calc_A(self, h):
-        """
-        calc matrix A for spline coefficient c
-        """
         A = np.zeros((self.nx, self.nx))
         A[0, 0] = 1.0
         for i in range(self.nx - 1):
@@ -118,9 +86,6 @@ class Spline:
         return A
  
     def __calc_B(self, h):
-        """
-        calc matrix B for spline coefficient c
-        """
         B = np.zeros(self.nx)
         for i in range(self.nx - 2):
             B[i + 1] = 3.0 * (self.a[i + 2] - self.a[i + 1]) / \
@@ -129,11 +94,6 @@ class Spline:
  
  
 class Spline2D:
-    """
-    2D Cubic Spline class
- 
-    """
- 
     def __init__(self, x, y):
         self.s = self.__calc_s(x, y)
         self.sx = Spline(self.s, x)
@@ -149,18 +109,12 @@ class Spline2D:
         return s
  
     def calc_position(self, s):
-        """
-        calc position
-        """
         x = self.sx.calc(s)
         y = self.sy.calc(s)
  
         return x, y
  
     def calc_curvature(self, s):
-        """
-        calc curvature
-        """
         dx = self.sx.calcd(s)
         ddx = self.sx.calcdd(s)
         dy = self.sy.calcd(s)
@@ -169,9 +123,6 @@ class Spline2D:
         return k
  
     def calc_yaw(self, s):
-        """
-        calc yaw
-        """
         dx = self.sx.calcd(s)
         dy = self.sy.calcd(s)
         yaw = math.atan2(dy, dx)
