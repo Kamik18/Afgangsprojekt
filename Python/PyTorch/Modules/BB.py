@@ -53,8 +53,9 @@ def resize_image_bb(read_path,write_path,bbs,sz):
     #im_resized = cv2.resize(im, (int(1.49*sz), sz))
     masks = []
     for mask in create_masks(bbs, im):
-        masks.append(cv2.resize(mask, (int(1.49*sz), sz)))
-    
+        #masks.append(cv2.resize(mask, (int(1.49*sz), sz)))
+        masks.append(mask)
+        
     new_path = str(write_path/read_path.parts[-1])
     #cv2.imwrite(new_path, cv2.cvtColor(im_resized, cv2.COLOR_RGB2BGR))
     return new_path, mask_to_bbs(masks)

@@ -59,9 +59,10 @@ imgs = []
 im_data = generate_train_df(anno_path)    
 im_data.head()
 
-frame = cv2.imread(f'{img_path}/Alfa_Laval_sensor_050.jpg', cv2.IMREAD_COLOR)
+frame = cv2.imread(f'{img_path}/Alfa_Laval_sensor_020.jpg', cv2.IMREAD_COLOR)
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 plt.imshow(frame)
+
 #%%
 #print(imgs[1])      
 #imgs = [f'Alfa_Laval_Sensor_{img_num}.jpg']#, 'Alfa_Laval_Sensor_026.jpg',]
@@ -97,7 +98,7 @@ for idx, row in im_data.iterrows():
     ymin = row[3][0]['ymin']
     xmax = row[3][0]['xmax']
     ymax = row[3][0]['ymax']
-    cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0,255,0), 2)
+    #cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0,255,0), 2)
     # The bitwise and of the frame and mask is done so
     # that only the blue coloured objects are highlighted
     # and stored in res
@@ -105,8 +106,9 @@ for idx, row in im_data.iterrows():
     
     # Convert colors for frame and mask
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
-
+    new_name = row[0].replace('.jpg', '_seg.jpg')
+    cv2.imwrite(f'data/AlfaLavalFinal/colorsegmented/{new_name}', res)
+    
     fig = plt.figure(figsize=(20, 15))
     #fig.suptitle(row[0])
     rows = 1
@@ -114,9 +116,11 @@ for idx, row in im_data.iterrows():
     fig.add_subplot(rows, columns, 1)
     plt.imshow(frame)
     fig.add_subplot(rows, columns, 2)
-    plt.imshow(mask)
+    plt.imshow(mask, cmap='gray')
     fig.add_subplot(rows, columns, 3)
     plt.imshow(res)
+    break
+
 #%%
 """
 for img in imgs:

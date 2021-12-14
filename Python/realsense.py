@@ -51,7 +51,7 @@ start_point = (100,250)
 end_point = (520,450)
 
 path='data/'
-start_num=61
+start_num=302
 
 try:
     while True:
