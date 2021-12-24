@@ -50,8 +50,8 @@ textThickness = 2
 start_point = (100,250)
 end_point = (520,450)
 
-path='data/'
-start_num=302
+path='ObstacleAvoidance/'
+start_num=0
 
 try:
     while True:
@@ -61,6 +61,7 @@ try:
         depth_frame = frameset.get_depth_frame()                
         img = np.asanyarray(color_frame.get_data())  
         depth_image = np.asanyarray(depth_frame.get_data())
+        color_image = np.asanyarray(color_frame.get_data())
         
         # Crop depth data:
         depth = img[start_point[1]:end_point[1],start_point[0]:end_point[0]]
@@ -72,19 +73,36 @@ try:
         print("middle point = ", int(width/2), int(height/2), ", Distance = ", depth_frame.get_distance(int(width/2), int(height/2)), " m")
         
         # Printing Circles
-        #img = cv2.circle(img,(int(width/2),int(height/2)), radius=2, color=(0, 0, 255), thickness=3)
-        #cv2.putText(img,"Midt",(int(width/2)+10,int(height/2)+30),
-        #cv2.FONT_HERSHEY_COMPLEX,textScale,(0,0,255),textThickness)
+        x = int(width/2)
+        y = int(height/2)
+        img = cv2.circle(img,(x,y), radius=2, color=(0, 0, 255), thickness=3)
+        dist = depth_frame.get_distance(x,y)
+        cv2.putText(img, str("%.4f" % round(dist,4)),(x+10,y+30),
+        cv2.FONT_HERSHEY_COMPLEX,textScale,(0,0,255),textThickness)
         #cv2.rectangle(img, start_point, end_point,color=(255,255,255),thickness=2)
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)       
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)   
+        
+        depth_colormap_dim = depth_colormap.shape
+        color_colormap_dim = color_image.shape
+        
+        if depth_colormap_dim != color_colormap_dim:
+            resized_color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]), interpolation=cv2.INTER_AREA)
+            images = np.hstack((resized_color_image, depth_colormap))
+        else:
+            images = np.hstack((color_image, depth_colormap))
+
         cv2.namedWindow('Output', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('Output', 640,480)
         cv2.moveWindow('Output', 260,0)
         cv2.imshow("Output", img)
-        #cv2.namedWindow('depth', cv2.WINDOW_NORMAL)
-        #cv2.resizeWindow('depth', 640,480)
-        #cv2.moveWindow('depth', 900,0)
-        #cv2.imshow("depth", depth_colormap)
+        cv2.namedWindow('depth', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('depth', 640,480)
+        cv2.moveWindow('depth', 900,0)
+        cv2.imshow("depth", depth_colormap)
+
+
+
+
 
         ch =  cv2.waitKey(0)  # Wait for for user to hit any key
         print("ch value: ", ch)
@@ -93,7 +111,7 @@ try:
            print("saving image")
            #new = fr'{path}\Alfa_Laval_Sensor_{start_num}.jpg'
            #print(new)
-           cv2.imwrite(f'{path}/Alfa_Laval_Sensor_{start_num}.jpg',img)
+           cv2.imwrite(f'{path}/Distance_{start_num}.jpg',img)
            start_num+=1
            
         

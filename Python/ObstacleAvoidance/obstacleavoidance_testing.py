@@ -8,7 +8,6 @@ from matplotlib import cm
 import time
 from glob import glob
 
-
 def printBeforeAndAfter(subtitle_left, subtitle_right, before, after):
     fig = plt.figure(figsize=(20,15))
     rows = 1
@@ -20,18 +19,19 @@ def printBeforeAndAfter(subtitle_left, subtitle_right, before, after):
     plt.title(subtitle_right)
     plt.imshow(after)
     
-#%%
+# %%
+
 start = time.time()
 # # Edge detection - Canny
 #img_dir = '../data/AlfaLavalFinal/images'
 img_dir = './images'
-num = '311'
+num = '300'
 
 img = cv2.imread(f'{img_dir}/Alfa_Laval_Sensor_{num}.jpg')
 #img = cv2.imread('obstacle_scene_1.jpg')
 
 # Convert image color and blur image
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 gaussianBlur = cv2.GaussianBlur(img, (3,3),cv2.BORDER_DEFAULT)
 bilateralBlur = cv2.bilateralFilter(img, 9,40,75)
 medianBlur = cv2.medianBlur(img, 5)
@@ -41,7 +41,7 @@ img_gray_blur = cv2.cvtColor(medianBlur, cv2.COLOR_RGB2GRAY)
 ret, thresh_gray = cv2.threshold(img_gray_blur, 85, 255, cv2.THRESH_BINARY)
 
 sobelxy = cv2.Sobel(src=img_gray_blur, ddepth=cv2.CV_8U, dx=1, dy=1, ksize=5, borderType=cv2.BORDER_DEFAULT) # Combined X and Y Sobel Edge Detection
-#laplacian = cv2.Laplacian(thresh_gray,cv2.CV_8U, ksize=5, borderType=cv2.BORDER_DEFAULT)
+laplacian = cv2.Laplacian(thresh_gray,cv2.CV_8U, ksize=5, borderType=cv2.BORDER_DEFAULT)
 #laplacian = cv2.inRange(laplacian, 50, 255)
 # Edge detection
 edges = cv2.Canny(img, 50,130)
@@ -53,10 +53,10 @@ median_edges = cv2.Canny(medianBlur, 50, 130)
 end = time.time()
 print(f"Runtime of the program is {end - start}")
 # Print
-#printBeforeAndAfter('Original', 'No Blur Edges', img, edges)
-#printBeforeAndAfter('No Blur', 'Gaussian Blur Edges', edges, gaussian_edges)
-#printBeforeAndAfter('Bilateral Blur Edges', 'Median Blur Edges ',bilateral_edges, median_edges)
-printBeforeAndAfter('Sobel Gaussian Edges', 'Laplacian Gaussian edges',thresh_gray, sobelxy)
+printBeforeAndAfter('Original', 'No Blur Edges', img, edges)
+printBeforeAndAfter('No Blur', 'Gaussian Blur Edges', edges, gaussian_edges)
+printBeforeAndAfter('Bilateral Blur Edges', 'Median Blur Edges ',img, median_edges)
+printBeforeAndAfter('Sobel Gaussian Edges', 'Laplacian Gaussian edges',thresh_gray, laplacian)
 """
 cv2.imwrite(f'./test/Alfa_Laval_Sensor_Edges_{num}.jpg', edges)
 cv2.imwrite(f'./test/Alfa_Laval_Sensor_Gaussian_Canny_Edges_{num}.jpg', gaussian_edges)
@@ -68,8 +68,8 @@ cv2.imwrite(f'./test/Alfa_Laval_Sensor_Sobel_Edges_{num}.jpg', sobelxy)
 
 #%%
 # Sidefill
-gaussian_edges = median_edges
-edges = bilateral_edges
+#gaussian_edges = median_edges
+#edges = bilateral_edges
 start = time.time()
 #edges = blurred_edge2
 h, w = img.shape[:2]
@@ -134,6 +134,10 @@ smoothed = converted_img.filter(ImageFilter.ModeFilter(size=13))
 
 converted_img_blur = Image.fromarray(np.uint8(cm.gist_earth(horizontal_blur)*255))
 smoothed_blur = converted_img_blur.filter(ImageFilter.ModeFilter(size=13))
+
+
+#smoothed_blur = horizontal_blur #= cv2.dilate(horizontal_blur, kernel=kernel1)
+#smoothed_blur = horizontal_blur = cv2.erode(horizontal_blur, kernel=kernel)
 # end time
 end = time.time()
 print(f"Runtime of the program is {end - start}")
@@ -198,24 +202,8 @@ for i in range(pixel_x):
         createDot(bw_img, (pixel_y[i]))
 """
 
-
-
-
 #%%
 # Final
-def createDot(img, point):
-    for i in range(-5, 6, 1):
-        for j in range(-5, 6, 1):
-            x = point[1] + i
-            y = point[0] + j
-            if x < w and y < h:
-                if len(img[y,x]) == 4:
-                    img[y, x] = [255,0,0, 255]  
-                if len(img[y,x]) == 3:
-                    img[y, x] = [255,0,0]  
-
-print(len(img[0,0]))
-
 # Construct a colour image to superimpose
 start = time.time()
 mask = np.asarray(img_with_alpha_values)
@@ -232,23 +220,30 @@ print(f"Runtime of the program is {end - start}")
 printBeforeAndAfter('Final', 'Final Blur', img_with_overlay, img_with_overlay_blur)
 #cv2.imwrite(f'./test/Alfa_Laval_Sensor_Test_Bilateral_{num}.jpg', img_with_overlay)
 #cv2.imwrite(f'./test/Alfa_Laval_Sensor_Test_Median_{num}.jpg', img_with_overlay_blur)
-#cv2.imwrite(f'./test/Alfa_Laval_Sensor_Test_Edges_{num}.jpg', img_with_overlay)
+#cv2.imwrite(f'./test/Alfa_Laval_Sensor_Test_{num}.jpg', img_with_overlay)
 #cv2.imwrite(f'./test/Alfa_Laval_Sensor_Test_Gaussian_{num}.jpg', img_with_overlay_blur)
 
 # %%
-# Previous combine method
-"""
-# Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
-img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-smoothed_hsv = cv2.cvtColor(mask, cv2.COLOR_BGR2HSV)
+print(pixel_y_blur[0])
+print(pixel_x_blur[0])
+#%%
+x = pixel_x_blur[0]
+y = pixel_y_blur[0]
+imcopy = img_with_overlay_blur.copy()
+# calculate width
+dist = 400
+# Convert 21850 * x^-1.033 to non-negative power
+width = 21850 * (1/(dist**1.033))
+print('width = ', width)
+left = (int(x - (width/2)), y)
 
-img_hsv_blur = cv2.cvtColor(img_blur, cv2.COLOR_BGR2HSV)
-smoothed_hsv_blur = cv2.cvtColor(mask_blur, cv2.COLOR_BGR2HSV)
-
-# Create bitwise_or to add the two images together
-img_hsv_mask = cv2.bitwise_or(img_hsv, smoothed_hsv)
-img_masked = cv2.cvtColor(img_hsv_mask, cv2.COLOR_HSV2BGR)
-
-img_hsv_mask_blur = cv2.bitwise_or(img_hsv_blur, smoothed_hsv_blur)
-img_masked_blur = cv2.cvtColor(img_hsv_mask_blur, cv2.COLOR_HSV2BGR)
-"""
+print(left)
+right = (int(x + (width/2)), y)
+print(right)
+# Add line
+cv2.circle(imcopy, (x, y), 2, (255,0,0), 2)
+cv2.circle(imcopy, (x, y), 2, (255,0,0), 2)
+cv2.line(imcopy, left, right, (0,0,255), 2)
+fig = plt.figure(figsize=(15,10))
+fig.add_subplot(1,1, 1)
+plt.imshow(imcopy)
