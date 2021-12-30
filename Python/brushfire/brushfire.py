@@ -1,4 +1,5 @@
 from matplotlib.pyplot import imshow
+from brushfire_metohds import workspace
 import brushfire_metohds
 import scanner
 import cv2
@@ -8,17 +9,18 @@ from numpy.linalg import norm
 import math
 from dataclasses import dataclass
 
-#brushfire_img = brushfire_metohds.BrushfireAlgorithmGrayScale('ICP/Kort.png', 1)
+brushfire_img = brushfire_metohds.BrushfireAlgorithmGrayScale('ICP/Kort.png', 3)
 ori=cv2.imread('ICP/Kort.png')
 
 
 # Add workspace areas
-#workspace_img = brushfire_metohds.workspace(brushfire_img, ori, 10)
+workspace_img = brushfire_metohds.workspace(brushfire_img, ori, 10)
 
-#cv2.imshow('brushfire', brushfire_img)
-#cv2.imshow('ori', workspace_img)
-#cv2.waitKey(0)
-
+cv2.imshow('brushfire', brushfire_img)
+cv2.imshow('ori', workspace_img)
+cv2.imwrite('ICP/brushfire.png', brushfire_img)
+cv2.waitKey(0)
+exit(1)
 
 #reduced_img, point = brushfire_metohds.ReduceToLowestResolution(brushfire_img)
 

@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import csv
+import glob
 import os
 
 # Variables
@@ -30,16 +31,16 @@ def split_train_into_train_val():
         else:
             print("Not found")
 
-img = cv2.imread(train_path + '//Alfa_Laval_Sensor_0.jpg')
+#img = cv2.imread(train_path + '//Alfa_Laval_Sensor_0.jpg')
 #img = img[..., ::-1]
-b,g,r = cv2.split(img)       # get b,g,r
-img = cv2.merge([r,g,b])     # switch it to rgb
-width, height = img.shape[1], img.shape[0]
+#b,g,r = cv2.split(img)       # get b,g,r
+#img = cv2.merge([r,g,b])     # switch it to rgb
+#width, height = img.shape[1], img.shape[0]
 #print(width, height)
 #plt.imshow(img)
 #plt.show()
 
-def CSV2YoloLine(box, classList=[]):
+def CSV2YoloLine(box, width, height, classList=[]):
     print(box)
     xtopleft = box[1]
     ytopleft = box[2]
@@ -57,7 +58,7 @@ def CSV2YoloLine(box, classList=[]):
     print(classIndex, xcen, ycen, w, h)
     return classIndex, xcen, ycen, w, h
 
-def BndBox2YoloLine(box, classList=[]):
+def BndBox2YoloLine(box, width, height, classList=[]):
     xmin = box[1]
     xmax = box[2]
     ymin = box[3]
@@ -271,6 +272,55 @@ def changefilename():
 
         # os.rename(os.path.join(path, file), os.path.join(path, ''.join([str(index), '.jpg'])))
 
-changefilename()
 
+def extractvalues():
+    file = open('data/e25_seg.txt', 'r')
+    lines = file.readlines()
+    
+    counter = 0
+    for line in lines:
+        counter += 1 
+        loss_index = line.find('loss')
+        val_loss_index = line.find('val_loss')
+        loss_find_comma = line[loss_index+5:].find(',')
+        loss = line[loss_index+5:loss_index + 5 + loss_find_comma]
+        val_loss = line[val_loss_index + 9:-1]
+        print(counter, loss, val_loss)
 
+def combine():
+    file1 = open('data/e25_015_seg.txt', 'r')
+    lines1 = file1.readlines() 
+
+    file2 = open('data/e25_015_noseg.txt', 'r')
+    lines2 = file2.readlines()
+
+    for i in range(len(lines1)):
+        line1 = lines1[i].split()
+        line2 = lines2[i].split()
+        print(i +1, line1[1], line1[2], line2[1], line2[2])
+
+#extractvalues()
+combine()
+
+def overwriteFilename():
+    original = [os.path.basename(x) for x in glob.glob("C:/Users/emila/Downloads/images/*.jpg")]
+    #original = glob.glob("C:/Users/emila/Downloads/testing/*.jpg")
+    old = glob.glob("C:/Users/emila/Downloads/images/*.jpg")
+
+    for i in range(len(original)):
+        
+        new = original[i][5:]
+        
+        os.rename(f'C:/Users/emila/Downloads/images/{original[i]}', f'C:/Users/emila/Downloads/images/train/{new}')        
+        #if i == 1:
+        #    break
+        #index = old[i].find("/train")
+        #old_string = old[i][index+6:]
+        #overwrite = original[i]
+        #new_string = old[i].replace(old_string, overwrite)
+        #print(old[i].replace(old_string, new_string))
+        #print(new_string)
+        #os.rename(old[i], new_string)
+    
+    
+#overwriteFilename()

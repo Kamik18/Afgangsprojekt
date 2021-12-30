@@ -51,7 +51,7 @@ def generate_train_df (anno_path):
 img_path = 'data/AlfaLavalFinal/images'
 anno_path = 'data/AlfaLavalFinal/annotations'
 
-img_num = '122'
+img_num = '218'
 imgs = []
 #os.chdir(img_path)
 #for file in glob.glob("*.jpg"):   
@@ -59,16 +59,19 @@ imgs = []
 im_data = generate_train_df(anno_path)    
 im_data.head()
 
-frame = cv2.imread(f'{img_path}/Alfa_Laval_sensor_020.jpg', cv2.IMREAD_COLOR)
+frame = cv2.imread(f'{img_path}/Alfa_Laval_sensor_218.jpg', cv2.IMREAD_COLOR)
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 plt.imshow(frame)
 
 #%%
 #print(imgs[1])      
-#imgs = [f'Alfa_Laval_Sensor_{img_num}.jpg']#, 'Alfa_Laval_Sensor_026.jpg',]
+imgs = [f'Alfa_Laval_Sensor_{img_num}.jpg']#, 'Alfa_Laval_Sensor_026.jpg',]
 for idx, row in im_data.iterrows():
+    if "218" not in row[0]:
+        continue
 #if True:
     frame = cv2.imread(f'{img_path}/{row[0]}', cv2.IMREAD_COLOR)
+    
     
     #frame = cv2.resize(frame, (447,300), interpolation=cv2.INTER_AREA)
 
@@ -107,7 +110,9 @@ for idx, row in im_data.iterrows():
     # Convert colors for frame and mask
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     new_name = row[0].replace('.jpg', '_seg.jpg')
-    cv2.imwrite(f'data/AlfaLavalFinal/colorsegmented/{new_name}', res)
+    #cv2.imwrite(f'data/AlfaLavalFinal/colorsegmented/{new_name}', res)
+    cv2.imwrite(f'data{new_name}', mask)
+
     
     fig = plt.figure(figsize=(20, 15))
     #fig.suptitle(row[0])
