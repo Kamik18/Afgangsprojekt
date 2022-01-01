@@ -274,7 +274,7 @@ def changefilename():
 
 
 def extractvalues():
-    file = open('data/e25_seg.txt', 'r')
+    file = open('data/e40_005_noseg.txt', 'r')
     lines = file.readlines()
     
     counter = 0
@@ -288,10 +288,10 @@ def extractvalues():
         print(counter, loss, val_loss)
 
 def combine():
-    file1 = open('data/e25_015_seg.txt', 'r')
+    file1 = open('data/e40_005_seg.txt', 'r')
     lines1 = file1.readlines() 
 
-    file2 = open('data/e25_015_noseg.txt', 'r')
+    file2 = open('data/e40_005_noseg.txt', 'r')
     lines2 = file2.readlines()
 
     for i in range(len(lines1)):
@@ -299,6 +299,7 @@ def combine():
         line2 = lines2[i].split()
         print(i +1, line1[1], line1[2], line2[1], line2[2])
 
+os.chdir('D:/Github/Afgangsprojekt/Python/')
 #extractvalues()
 combine()
 

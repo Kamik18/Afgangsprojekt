@@ -1,7 +1,7 @@
 <annotation>
-	<folder>tempimg</folder>
+	<folder>temp</folder>
 	<filename>Alfa_Laval_Sensor_142.jpg</filename>
-	<path>C:\Temp\tempimg\Alfa_Laval_Sensor_142.jpg</path>
+	<path>C:\Users\emila\Documents\Diplomingeniør_lokal\GitHubDesktop\Afgangsprojekt\Python\data\temp\Alfa_Laval_Sensor_142.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>420</xmin>
-			<ymin>69</ymin>
-			<xmax>469</xmax>
-			<ymax>115</ymax>
+			<xmin>122</xmin>
+			<ymin>324</ymin>
+			<xmax>148</xmax>
+			<ymax>358</ymax>
 		</bndbox>
 	</object>
 </annotation>

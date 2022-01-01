@@ -1,7 +1,7 @@
 <annotation>
-	<folder>images</folder>
+	<folder>temp</folder>
 	<filename>Alfa_Laval_Sensor_103.jpg</filename>
-	<path>C:\Users\emila\Documents\Diplomingeniør_lokal\Tensorflow\workspace\training_demo\images\Alfa_Laval_Sensor_103.jpg</path>
+	<path>C:\Users\emila\Documents\Diplomingeniør_lokal\GitHubDesktop\Afgangsprojekt\Python\data\temp\Alfa_Laval_Sensor_103.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,22 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>258</xmin>
-			<ymin>340</ymin>
-			<xmax>301</xmax>
-			<ymax>377</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>alfa</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>233</xmin>
-			<ymin>364</ymin>
-			<xmax>283</xmax>
-			<ymax>394</ymax>
+			<xmin>185</xmin>
+			<ymin>261</ymin>
+			<xmax>204</xmax>
+			<ymax>278</ymax>
 		</bndbox>
 	</object>
 </annotation>
