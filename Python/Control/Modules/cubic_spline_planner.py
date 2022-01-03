@@ -3,10 +3,6 @@ import numpy as np
 import bisect
  
 class Spline:
-    """
-    Cubic Spline class
-    """
- 
     def __init__(self, x, y):
         self.b, self.c, self.d, self.w = [], [], [], []
  
