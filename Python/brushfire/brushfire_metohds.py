@@ -4,7 +4,7 @@ import numpy
 def BrushfireAlgorithmGrayScale(imgPath, intensityChange):
     # Setup images
     oriImage=cv2.imread(imgPath, cv2.IMREAD_GRAYSCALE) # Read the file
-
+    
     image = oriImage.copy()
 
     # Create multiple images to draw both forward and backwards iteration aswell as the final brushfire image.
@@ -14,6 +14,11 @@ def BrushfireAlgorithmGrayScale(imgPath, intensityChange):
     cols, rows = brushfireImage.shape[:2]
     cols = cols - 1
     rows = rows - 1
+
+    for i in range(1,cols):
+        for j in range(1, rows): 
+            if brushfireImage[i,j] < 34:
+                brushfireImage[i,j] = 0
 
     #// Brushfire image
     for i in range(1,cols):
