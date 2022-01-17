@@ -4,20 +4,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-TF = [1,1,1,2,3,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,3,1,2,1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,3,6,2,1,1,1,1,1,1,9,7,11,1,1,1,2,1,1,1,1,7]
-ekstra = [2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,3,2,2,2,2]
-total = 0
-for i in TF:
-    total = total + i
-
-total_ble = 241
-for i in ekstra:
-    total_ble = total_ble + i - 1
-print(total)
-print(total_ble)
 #ori=cv2.imread('ICP/Kort.png')
 #ori=cv2.imread('ICP/MapNoPoints.png')
-ori=cv2.imread('ICP/Corrected_optimized_colored.png')
+#print(os.listdir())
+#ori=cv2.imread('ICP/Corrected_optimized_colored.png')
+#ori=cv2.imread('C:/Users\emila/Documents/Github/Afgangsprojekt/Python/ICP/Corrected_optimized_colored.png')
+ori=cv2.imread('C:/Users\emila/Documents/Github/Afgangsprojekt/Python/ICP/Kort.png')
+
 
 medianBlur = cv2.medianBlur(ori, 9)
 median_edges = cv2.Canny(medianBlur, 50, 130)
@@ -58,9 +51,10 @@ from skimage.morphology import medial_axis, skeletonize, thin
 
 gray = cv2.cvtColor(ori, cv2.COLOR_RGB2GRAY)
 thresh, image = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-kernel = np.ones((9, 9), np.uint8)
-image = cv2.dilate(image, kernel)
+kernel = np.ones((5, 5), np.uint8)
 image = cv2.erode(image, kernel)
+image = cv2.dilate(image, kernel)
+
 
 
 #cv2.imshow('s', image)
