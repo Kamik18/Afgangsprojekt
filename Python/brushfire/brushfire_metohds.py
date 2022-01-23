@@ -80,7 +80,8 @@ def workspace(brushfire_img, original_img, threshold):
     for i in range(1,cols -1):
         for j in range(1, rows -1): 
             if brushfire_img[i,j] > threshold:
-                workspace_img[i,j] = [255,0,0]
+                #workspace_img[i,j] = [255,0,0]
+                workspace_img[i,j] = 255
     return workspace_img
 
 def ReduceToLowestResolution(img_input):
